@@ -11,11 +11,16 @@
 
 mas main {
 
-    agent bob: sample_agent.asl {
-      focus: w.c1 
-    }
+  agent vehicle1 {
+    focus: w.trafficEnv
+  }
 
-    workspace w {
-      artifact c1: example.Counter(3) 
-    }
+  agent vehicle2 {
+    focus: w.trafficEnv
+  }
+
+  workspace w {
+    artifact trafficEnv: TrafficEnvironment()
+  }
+
 }
