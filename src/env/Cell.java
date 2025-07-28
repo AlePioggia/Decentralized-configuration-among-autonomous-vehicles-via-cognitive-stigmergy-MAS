@@ -1,46 +1,37 @@
 public class Cell {
     private Position position;
-    private String agentId;
     private String direction;
+    private boolean isOccupied;
 
     public Cell(int x, int y) {
         this.position = new Position(x, y);
         this.direction = "North";
+        this.isOccupied = false;
     }
 
-    public Cell(int x, int y, String agentId) {
+    public Cell(int x, int y, String direction) {
         this.position = new Position(x, y);
-        this.agentId = agentId;
-        this.direction = "North";
-    }
-
-    public Cell(int x, int y, String agentId, String direction) {
-        this.position = new Position(x, y);
-        this.agentId = agentId;
         this.direction = direction;
-    }
-
-    public void setAgentId(String agentId) {
-        this.agentId = agentId;
+        this.isOccupied = false;
     }
 
     public void setDirection(String direction) {
         this.direction = direction;
     }
 
+    public void setOccupied(boolean occupied) {
+        this.isOccupied = occupied;
+    }
+
     public String getDirection() {
-        return direction;
+        return this.direction;
     }
 
     public Boolean isOccupied() {
-        return agentId != null && !agentId.isEmpty();
+        return this.isOccupied;
     }
 
     public Position getPosition() {
-        return position.getPosition();
-    }
-
-    public String getAgentId() {
-        return agentId;
+        return this.position.getPosition();
     }
 }
