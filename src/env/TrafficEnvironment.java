@@ -33,8 +33,8 @@ public class TrafficEnvironment extends Artifact {
             this.grid.setCell(cell);
         }
 
-        spawnAgent("me", new Position(0, 1));
-        // spawnAgent("agent2", new Position(0, 2));
+        // spawnAgent("me", new Position(0, 1));
+        spawnAgent("me", new Position(4, 2));
         updateObservableProperties();
     }
 
@@ -64,28 +64,49 @@ public class TrafficEnvironment extends Artifact {
         for (var entry : agentActions.entrySet()) {
             String agent = entry.getKey();
             String action = entry.getValue();
+            Cell cell = grid.getCell(agentPositions.get(agent).getX(), agentPositions.get(agent).getY());
 
-            if (action.equals("forward")) {
-                Position currentPosition = agentPositions.get(agent);
-                if (currentPosition != null) {
-                    Position nextPosition = new Position(currentPosition.getX() + 1, currentPosition.getY());
+            Position currentPosition = cell.getPosition();
 
-                    if (nextPosition != null & grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
-                            && road.getLines().contains(grid.getCell(nextPosition.getX(), nextPosition.getY()))) {
-                        agentPositions.put(agent, nextPosition);
+            if (currentPosition != null) {
+                Position nextPosition = computeNextPosition(cell, action);
 
-                        grid.getCell(currentPosition.getX(), currentPosition.getY()).setOccupied(false);
-                        grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
-                        System.out.println("Agent " + agent + " moved to position: " + nextPosition);
-                    } else {
-                        System.out.println(
-                                "Agent " + agent + " cannot move forward, next position is out of bounds or occupied.");
-                    }
+                if (nextPosition != null & grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
+                        && road.getLines().contains(grid.getCell(nextPosition.getX(), nextPosition.getY()))) {
+
+                    agentPositions.put(agent, nextPosition);
+                    grid.getCell(currentPosition.getX(), currentPosition.getY()).setOccupied(false);
+                    grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
+                    System.out.println("Agent " + agent + " moved to position: " + nextPosition);
+                } else {
+                    System.out.println(
+                            "Agent " + agent + " cannot move east, next position is out of bounds or occupied.");
                 }
             }
             agentActions.clear();
             updateObservableProperties();
         }
+    }
+
+    private Position computeNextPosition(Cell cell, String action) {
+        int x = cell.getPosition().getX();
+        int y = cell.getPosition().getY();
+
+        if (action.equals("follow")) {
+            switch (cell.getDirection()) {
+                case "North":
+                    return new Position(x, y - 1);
+                case "South":
+                    return new Position(x, y + 1);
+                case "East":
+                    return new Position(x + 1, y);
+                case "West":
+                    return new Position(x - 1, y);
+                default:
+                    return cell.getPosition();
+            }
+        }
+        return cell.getPosition();
     }
 
     private List<String> collectIntents() {
@@ -96,10 +117,10 @@ public class TrafficEnvironment extends Artifact {
     }
 
     private void clearObservableProperties() {
-        for (String prop : observableProperties) {
+        for (String prop : this.observableProperties) {
             removeObsProperty(prop);
         }
-        observableProperties.clear();
+        this.observableProperties.clear();
     }
 
     private void updateObservableProperties() {
@@ -109,8 +130,17 @@ public class TrafficEnvironment extends Artifact {
             String agent = entry.getKey();
             Position pos = entry.getValue();
 
+            Cell cell = grid.getCell(pos.getX(), pos.getY());
+            if (cell.getDirection() != null) {
+                var direction = cell.getDirection();
+                defineObsProperty("direction", pos.getX(), pos.getY(), direction.toString());
+                this.observableProperties.add("direction");
+            }
             defineObsProperty("at", agent, pos.getX(), pos.getY());
             defineObsProperty("occupied", pos.getX(), pos.getY());
+
+            this.observableProperties.add("at");
+            this.observableProperties.add("occupied");
         }
     }
 
