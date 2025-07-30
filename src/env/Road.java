@@ -15,6 +15,10 @@ public class Road {
         return roadName;
     }
 
+    public List<Cell> getLines() {
+        return leftLine.addAll(rightLine) ? leftLine : rightLine;
+    }
+
     public void setLines(List<Cell> leftLine, List<Cell> rightLine) {
         this.leftLine = leftLine;
         this.rightLine = rightLine;

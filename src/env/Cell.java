@@ -5,7 +5,7 @@ public class Cell {
 
     public Cell(int x, int y) {
         this.position = new Position(x, y);
-        this.direction = "North";
+        this.direction = "East";
         this.isOccupied = false;
     }
 

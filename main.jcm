@@ -15,10 +15,6 @@ mas main {
     focus: w.trafficEnv
   }
 
-  agent vehicle2 {
-    focus: w.trafficEnv
-  }
-
   workspace w {
     artifact trafficEnv: TrafficEnvironment()
   }
