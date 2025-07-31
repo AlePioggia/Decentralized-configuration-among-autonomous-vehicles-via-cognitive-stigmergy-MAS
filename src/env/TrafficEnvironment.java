@@ -33,8 +33,8 @@ public class TrafficEnvironment extends Artifact {
             this.grid.setCell(cell);
         }
 
-        // spawnAgent("vehicle1", new Position(0, 1));
-        spawnAgent("vehicle2", new Position(4, 2));
+        spawnAgent("vehicle1", new Position(0, 1));
+        // spawnAgent("vehicle2", new Position(4, 2));
         updateObservableProperties();
     }
 

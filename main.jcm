@@ -11,10 +11,11 @@
 
 mas main {
 
-  agent vehicle2: vehicle.asl {
-    beliefs: name("vehicle2")
+  agent vehicle1: vehicle.asl {
+    beliefs: name("vehicle1")
     focus: w.trafficEnv
   }
+
 
   workspace w {
     artifact trafficEnv: TrafficEnvironment()
