@@ -14,12 +14,18 @@
     +direction(X, Y, Direction);
     .print("Cell Direction, ", X, " ", Y, " ", Direction).
 
++interval(I)[source(percept)] <-
+    +simulation_interval(I).
+
++step_completed[source(percept)] : get_name(ME) <- 
+    .print(ME, " completed its step");
+    !loop.
+
 !start.
 
 +!start : get_name(ME) <-
     .print("vehicle", ME, "starting");
-    .print("Initial beliefs: ");
-    !loop.
+    !choose_action.
 
 +!start <- 
     .print("waiting for the name drop...");
@@ -27,11 +33,7 @@
     !start.
 
 +!loop : get_name(ME) <- 
-    !choose_action;
-    .wait(1000);
-    step;
-    readIntents(Intents);
-    !loop.
+    !choose_action.
 
 +!choose_action : get_name(ME) & at(ME, X, Y) & direction(X, Y, Direction) <- 
     ?next_position(X, Y, Direction, NextX, NextY);

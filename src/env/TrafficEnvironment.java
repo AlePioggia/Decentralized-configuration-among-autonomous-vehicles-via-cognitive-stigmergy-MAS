@@ -2,9 +2,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import cartago.Artifact;
+import cartago.INTERNAL_OPERATION;
 import cartago.OPERATION;
 import cartago.OpFeedbackParam;
 
@@ -15,6 +18,10 @@ public class TrafficEnvironment extends Artifact {
     private Map<String, Position> agentPositions;
     private Road road;
     private List<String> observableProperties;
+
+    private Timer timer;
+    private int interval = 1000;
+    private boolean running = false;
 
     void init() {
         this.grid = new Grid(10, 10);
@@ -34,8 +41,84 @@ public class TrafficEnvironment extends Artifact {
         }
 
         spawnAgent("vehicle1", new Position(0, 1));
-        // spawnAgent("vehicle2", new Position(4, 2));
+        spawnAgent("vehicle2", new Position(4, 2));
         updateObservableProperties();
+
+        timer = new Timer("TrafficEnvironmentTimer", true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    execInternalOp("step");
+                } catch (Exception ex) {
+                    System.err.println("Error in TrafficEnvironment timer: " + ex.getMessage());
+                }
+            }
+        }, interval, interval);
+
+        defineObsProperty("interval", interval);
+    }
+
+    @INTERNAL_OPERATION
+    public void step() {
+        if (running)
+            return;
+        try {
+            running = true;
+            Map<String, String> actionsCopy;
+            synchronized (agentActions) {
+                actionsCopy = new HashMap<>(this.agentActions);
+                this.agentActions.clear();
+            }
+
+            if (!actionsCopy.isEmpty()) {
+                handleStepLogic(actionsCopy);
+            }
+
+            signal("step_completed");
+        } catch (Exception e) {
+            System.err.println("Error during step execution: " + e.getMessage());
+        } finally {
+            running = false;
+        }
+    }
+
+    private void handleStepLogic(Map<String, String> actionsCopy) {
+        for (var entry : actionsCopy.entrySet()) {
+            String agent = entry.getKey();
+            String action = entry.getValue();
+            Cell cell = grid.getCell(agentPositions.get(agent).getX(),
+                    agentPositions.get(agent).getY());
+
+            Position currentPosition = cell.getPosition();
+
+            if (currentPosition != null) {
+                Position nextPosition = computeNextPosition(cell, action);
+
+                if (nextPosition != null && isPositionWithinBounds(nextPosition)
+                        && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
+                        && road.getLines().contains(grid.getCell(nextPosition.getX(),
+                                nextPosition.getY()))) {
+
+                    agentPositions.put(agent, nextPosition);
+                    grid.getCell(currentPosition.getX(),
+                            currentPosition.getY()).setOccupied(false);
+                    grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
+                    System.out.println("Agent " + agent + " moved to position: " + nextPosition);
+                } else {
+                    System.out.println(
+                            "Agent " + agent + " cannot move, next position is out of bounds or occupied.");
+                }
+            }
+            updateObservableProperties();
+        }
+    }
+
+    @OPERATION
+    public void stopSimulation() {
+        if (this.timer != null) {
+            this.timer.cancel();
+        }
     }
 
     private void spawnAgent(String agentId, Position position) {
@@ -57,36 +140,6 @@ public class TrafficEnvironment extends Artifact {
         List<String> agentActionsList = collectIntents();
         intents.set(agentActionsList);
         System.out.println("Current agent intents: " + agentActions);
-    }
-
-    @OPERATION
-    void step() {
-        for (var entry : agentActions.entrySet()) {
-            String agent = entry.getKey();
-            String action = entry.getValue();
-            Cell cell = grid.getCell(agentPositions.get(agent).getX(), agentPositions.get(agent).getY());
-
-            Position currentPosition = cell.getPosition();
-
-            if (currentPosition != null) {
-                Position nextPosition = computeNextPosition(cell, action);
-
-                if (nextPosition != null && isPositionWithinBounds(nextPosition)
-                        && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
-                        && road.getLines().contains(grid.getCell(nextPosition.getX(), nextPosition.getY()))) {
-
-                    agentPositions.put(agent, nextPosition);
-                    grid.getCell(currentPosition.getX(), currentPosition.getY()).setOccupied(false);
-                    grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
-                    System.out.println("Agent " + agent + " moved to position: " + nextPosition);
-                } else {
-                    System.out.println(
-                            "Agent " + agent + " cannot move, next position is out of bounds or occupied.");
-                }
-            }
-            agentActions.clear();
-            updateObservableProperties();
-        }
     }
 
     private Boolean isPositionWithinBounds(Position position) {

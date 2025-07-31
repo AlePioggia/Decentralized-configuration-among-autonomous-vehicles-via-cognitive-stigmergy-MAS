@@ -16,6 +16,11 @@ mas main {
     focus: w.trafficEnv
   }
 
+  agent vehicle2: vehicle.asl {
+    beliefs: name("vehicle2")
+    focus: w.trafficEnv
+  }
+
 
   workspace w {
     artifact trafficEnv: TrafficEnvironment()
