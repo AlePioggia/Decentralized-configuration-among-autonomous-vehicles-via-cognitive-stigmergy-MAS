@@ -11,7 +11,8 @@
 
 mas main {
 
-  agent vehicle1 {
+  agent vehicle2: vehicle.asl {
+    beliefs: name("vehicle2")
     focus: w.trafficEnv
   }
 

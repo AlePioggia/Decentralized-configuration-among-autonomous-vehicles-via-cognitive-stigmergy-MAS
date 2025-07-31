@@ -33,8 +33,8 @@ public class TrafficEnvironment extends Artifact {
             this.grid.setCell(cell);
         }
 
-        // spawnAgent("me", new Position(0, 1));
-        spawnAgent("me", new Position(4, 2));
+        // spawnAgent("vehicle1", new Position(0, 1));
+        spawnAgent("vehicle2", new Position(4, 2));
         updateObservableProperties();
     }
 
@@ -71,7 +71,8 @@ public class TrafficEnvironment extends Artifact {
             if (currentPosition != null) {
                 Position nextPosition = computeNextPosition(cell, action);
 
-                if (nextPosition != null & grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
+                if (nextPosition != null && isPositionWithinBounds(nextPosition)
+                        && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
                         && road.getLines().contains(grid.getCell(nextPosition.getX(), nextPosition.getY()))) {
 
                     agentPositions.put(agent, nextPosition);
@@ -80,12 +81,17 @@ public class TrafficEnvironment extends Artifact {
                     System.out.println("Agent " + agent + " moved to position: " + nextPosition);
                 } else {
                     System.out.println(
-                            "Agent " + agent + " cannot move east, next position is out of bounds or occupied.");
+                            "Agent " + agent + " cannot move, next position is out of bounds or occupied.");
                 }
             }
             agentActions.clear();
             updateObservableProperties();
         }
+    }
+
+    private Boolean isPositionWithinBounds(Position position) {
+        return position.getX() >= 0 && position.getX() < grid.getWidth()
+                && position.getY() >= 0 && position.getY() < grid.getHeight();
     }
 
     private Position computeNextPosition(Cell cell, String action) {
