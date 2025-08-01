@@ -14,6 +14,9 @@ public class TrafficLight extends Artifact {
     public void init(int x, int y) {
         this.isGreenLight = true;
         this.position = new Position(x, y);
+
+        defineObsProperty("light_state", x, y, "green");
+
         startTimer();
     }
 
@@ -31,9 +34,16 @@ public class TrafficLight extends Artifact {
     public void toggleLight() {
         try {
             this.isGreenLight = !this.isGreenLight;
-            removeObsPropertyByTemplate("light_state");
-            defineObsProperty("light_state", this.position.getX(), this.position.getY(), this.isGreenLight);
-            signal("light_state_changed", this.position.getX(), this.position.getY(), this.isGreenLight);
+
+            try {
+                removeObsPropertyByTemplate("light_state");
+            } catch (IllegalArgumentException e) {
+            }
+
+            defineObsProperty("light_state", this.position.getX(), this.position.getY(),
+                    this.isGreenLight ? "green" : "red");
+            signal("light_state_changed", this.position.getX(), this.position.getY(),
+                    this.isGreenLight ? "green" : "red");
         } catch (Exception e) {
             System.err.println("Error while toggling traffic light");
         }
