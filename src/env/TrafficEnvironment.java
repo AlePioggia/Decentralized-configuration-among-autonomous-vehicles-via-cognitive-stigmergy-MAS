@@ -23,12 +23,21 @@ public class TrafficEnvironment extends Artifact {
     private int interval = 1000;
     private boolean running = false;
 
-    void init() {
+    private List<Position> trafficLightPositions;
+
+    public void init() {
         this.grid = new Grid(10, 10);
         this.agentActions = new HashMap<>();
         this.agentPositions = new HashMap<>();
         this.observableProperties = new ArrayList<>();
+        this.trafficLightPositions = new ArrayList<>();
 
+        setupEnvironmentRoads();
+        setupSimulationTimer();
+        setupTrafficLights();
+    }
+
+    private void setupEnvironmentRoads() {
         RoadFactory roadFactory = new BasicRoadFactoryImpl();
         this.road = roadFactory.create(0, 5, 1, 2);
 
@@ -43,7 +52,9 @@ public class TrafficEnvironment extends Artifact {
         spawnAgent("vehicle1", new Position(0, 1));
         spawnAgent("vehicle2", new Position(4, 2));
         updateObservableProperties();
+    }
 
+    private void setupSimulationTimer() {
         timer = new Timer("TrafficEnvironmentTimer", true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -57,6 +68,22 @@ public class TrafficEnvironment extends Artifact {
         }, interval, interval);
 
         defineObsProperty("interval", interval);
+    }
+
+    private void setupTrafficLights() {
+        this.trafficLightPositions.add(new Position(2, 1));
+        this.trafficLightPositions.add(new Position(2, 2));
+
+        // for (Position pos : this.trafficLightPositions) {
+        // defineObsProperty("traffic_light_position", pos.getX(), pos.getY());
+        // }
+    }
+
+    @OPERATION
+    public void hasTrafficLightAt(int x, int y, cartago.OpFeedbackParam<Boolean> result) {
+        boolean hasLight = this.trafficLightPositions.stream()
+                .anyMatch(pos -> pos.getX() == x && pos.getY() == y);
+        result.set(hasLight);
     }
 
     @INTERNAL_OPERATION

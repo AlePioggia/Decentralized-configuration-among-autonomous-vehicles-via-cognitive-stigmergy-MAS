@@ -24,6 +24,16 @@
 +agent_intention(Agent, X, Y, Action)[source(percept)] : get_name(ME) & Agent \== ME <-
     .print(ME, " notices that ", Agent, " wants to reach location: (", X, " ", Y, ")").
 
++light_state(X, Y, State)[source(percept)] <-
+    -light_current_state(X, Y, _);
+    +light_current_state(X, Y, State);
+    .print(ME, " has seen traffic light at ", X, " , ", Y).
+
++light_state_changed(X, Y, State)[source(percept)] <- 
+    -light_current_state(X, Y, _);
+    +light_current_state(X, Y, State);
+    .print(ME, " noticed that traffic light at ", X, " , ", Y, " changed").
+
 !start.
 
 +!start : get_name(ME) <-
@@ -41,12 +51,34 @@
 +!choose_action : get_name(ME) & at(ME, X, Y) & direction(X, Y, Direction) <- 
     ?next_position(X, Y, Direction, NextX, NextY);
 
+    hasTrafficLightAt(NextX, NextY, HasLight);
+
+    if (HasLight) {
+        !traffic_light_handler(NextX, NextY);
+    } else {
+        !ordinary_logic(NextX, NextY);
+    }.
+
++!traffic_light_handler(NextX, NextY) : get_name(ME) <-
+    if (light_current_state(NextX, NextY, "green")) {
+        .print(ME, " is in front of a green light, it can proceed");
+        !ordinary_logic(NextX, NextY);
+    } else {
+        .print(ME, "stop at light");
+        writeIntent(ME, "wait");
+    }.
+
++!traffic_light_handler(NextX, NextY) : get_name(ME) & 
+    not light_current_state(NextX, NextY, _) <-
+    .print(ME, "stop at light");
+    writeIntent(ME, "wait").
+
++!ordinary_logic(NextX, NextY) : get_name(ME) <- 
     if (not occupied(NextX, NextY)) {
         if (agent_intention(OtherAgent, NextX, NextY, _) & OtherAgent \== ME) {
             writeIntent(ME, "wait");
         } else {
             .print("agent can move.");
-            .print("current position: ", X, " ", Y);
             writeIntent(ME, "follow");
         }
     } else {

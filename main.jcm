@@ -13,17 +13,18 @@ mas main {
 
   agent vehicle1: vehicle.asl {
     beliefs: name("vehicle1")
-    focus: w.trafficEnv
+    focus: w.trafficEnv, w.light1, w.light2
   }
 
   agent vehicle2: vehicle.asl {
     beliefs: name("vehicle2")
-    focus: w.trafficEnv
+    focus: w.trafficEnv, w.light1, w.light2
   }
-
 
   workspace w {
     artifact trafficEnv: TrafficEnvironment()
+    artifact light1: TrafficLight(2, 1)
+    artifact light2: TrafficLight(2, 2)
   }
 
 }
