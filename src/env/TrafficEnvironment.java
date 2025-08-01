@@ -98,20 +98,22 @@ public class TrafficEnvironment extends Artifact {
                 if (nextPosition != null && isPositionWithinBounds(nextPosition)
                         && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
                         && road.getLines().contains(grid.getCell(nextPosition.getX(),
-                                nextPosition.getY()))) {
+                                nextPosition.getY()))
+                        && !grid.getCell(nextPosition.getX(), nextPosition.getY()).isOccupied()) {
 
                     agentPositions.put(agent, nextPosition);
                     grid.getCell(currentPosition.getX(),
                             currentPosition.getY()).setOccupied(false);
                     grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
-                    System.out.println("Agent " + agent + " moved to position: " + nextPosition);
+                    System.out.println("Agent " + agent + " moved to position: " + nextPosition.getX() + ", "
+                            + nextPosition.getY());
                 } else {
                     System.out.println(
                             "Agent " + agent + " cannot move, next position is out of bounds or occupied.");
                 }
             }
-            updateObservableProperties();
         }
+        updateObservableProperties();
     }
 
     @OPERATION
@@ -129,10 +131,38 @@ public class TrafficEnvironment extends Artifact {
         }
     }
 
+    private void updateIntentions() {
+        try {
+            removeObsPropertyByTemplate("agent_intention", null, null, null, null);
+        } catch (IllegalArgumentException e) {
+        }
+
+        synchronized (this.agentActions) {
+            for (Map.Entry<String, String> entry : this.agentActions.entrySet()) {
+                String agent = entry.getKey();
+                String action = entry.getValue();
+                Position currentPosition = agentPositions.get(agent);
+
+                if (currentPosition != null && action.equals("follow")) {
+                    Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
+                    Position desiredPosition = computeNextPosition(currentCell, action);
+
+                    if (desiredPosition != null) {
+                        defineObsProperty("agent_intention", agent, desiredPosition.getX(), desiredPosition.getY(),
+                                action);
+                        this.observableProperties.add("agent_intention");
+                    }
+                }
+            }
+        }
+    }
+
     @OPERATION
     void writeIntent(String agent, String action) {
-        agentActions.put(agent, action);
-        System.out.println("Agent " + agent + " intends to perform action: " + action);
+        synchronized (agentActions) {
+            this.agentActions.put(agent, action);
+        }
+        updateIntentions();
     }
 
     @OPERATION
@@ -175,15 +205,20 @@ public class TrafficEnvironment extends Artifact {
                 .collect(Collectors.toList());
     }
 
-    private void clearObservableProperties() {
-        for (String prop : this.observableProperties) {
-            removeObsProperty(prop);
-        }
-        this.observableProperties.clear();
-    }
+    // private void clearObservableProperties() {
+    // for (String prop : new ArrayList<>(this.observableProperties)) {
+    // removeObsProperty(prop);
+    // }
+    // this.observableProperties.clear();
+    // }
 
     private void updateObservableProperties() {
-        clearObservableProperties();
+        try {
+            removeObsPropertyByTemplate("at", null, null, null);
+            removeObsPropertyByTemplate("occupied", null, null);
+            removeObsPropertyByTemplate("direction", null, null, null);
+        } catch (Exception e) {
+        }
 
         for (Map.Entry<String, Position> entry : agentPositions.entrySet()) {
             String agent = entry.getKey();

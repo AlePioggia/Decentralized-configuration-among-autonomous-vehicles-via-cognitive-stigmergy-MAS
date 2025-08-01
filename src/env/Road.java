@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 public class Road {
@@ -16,7 +17,9 @@ public class Road {
     }
 
     public List<Cell> getLines() {
-        return leftLine.addAll(rightLine) ? leftLine : rightLine;
+        List<Cell> allLines = new ArrayList<>(leftLine);
+        allLines.addAll(rightLine);
+        return allLines;
     }
 
     public void setLines(List<Cell> leftLine, List<Cell> rightLine) {

@@ -21,10 +21,13 @@
     .print(ME, " completed its step");
     !loop.
 
++agent_intention(Agent, X, Y, Action)[source(percept)] : get_name(ME) & Agent \== ME <-
+    .print(ME, " notices that ", Agent, " wants to reach location: (", X, " ", Y, ")").
+
 !start.
 
 +!start : get_name(ME) <-
-    .print("vehicle", ME, "starting");
+    .print("vehicle ", ME, " starting");
     !choose_action.
 
 +!start <- 
@@ -39,9 +42,13 @@
     ?next_position(X, Y, Direction, NextX, NextY);
 
     if (not occupied(NextX, NextY)) {
-        .print("agent can move.");
-        .print("current position: ", X, " ", Y);
-        writeIntent(ME, "follow");
+        if (agent_intention(OtherAgent, NextX, NextY, _) & OtherAgent \== ME) {
+            writeIntent(ME, "wait");
+        } else {
+            .print("agent can move.");
+            .print("current position: ", X, " ", Y);
+            writeIntent(ME, "follow");
+        }
     } else {
         .print("agent wants to wait for its turn");
         writeIntent(ME, "wait");
