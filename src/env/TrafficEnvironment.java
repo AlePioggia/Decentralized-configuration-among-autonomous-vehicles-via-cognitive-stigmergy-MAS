@@ -1,7 +1,9 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
@@ -16,7 +18,7 @@ public class TrafficEnvironment extends Artifact {
     private Grid grid;
     private Map<String, String> agentActions;
     private Map<String, Position> agentPositions;
-    private Road road;
+    private List<Road> roads;
     private List<String> observableProperties;
 
     private Timer timer;
@@ -24,6 +26,8 @@ public class TrafficEnvironment extends Artifact {
     private boolean running = false;
 
     private List<Position> trafficLightPositions;
+    private List<Turn> availableTurns;
+    private Set<Turn> discoveredTurns;
 
     public void init() {
         this.grid = new Grid(10, 10);
@@ -31,26 +35,35 @@ public class TrafficEnvironment extends Artifact {
         this.agentPositions = new HashMap<>();
         this.observableProperties = new ArrayList<>();
         this.trafficLightPositions = new ArrayList<>();
+        this.roads = new ArrayList<>();
+        this.availableTurns = new ArrayList<>();
+        this.discoveredTurns = new HashSet<>();
 
         setupEnvironmentRoads();
         setupSimulationTimer();
-        setupTrafficLights();
+        // setupTrafficLights();
+        setupTurns();
+    }
+
+    private void setupTurns() {
+        Turn rightTurn = new Turn(new Position(2, 1), new Position(2, 2));
+        this.availableTurns.add(rightTurn);
     }
 
     private void setupEnvironmentRoads() {
         RoadFactory roadFactory = new BasicRoadFactoryImpl();
-        this.road = roadFactory.create(0, 5, 1, 2);
+        Road mainRoad = roadFactory.createHorizontalRoad(0, 5, 0, 1);
+        Road crossRoad = roadFactory.createVerticalRoad(2, 3, 2, 3);
+        this.roads.addAll(List.of(mainRoad, crossRoad));
 
-        for (Cell cell : this.road.getLeftLine()) {
-            this.grid.setCell(cell);
-        }
-
-        for (Cell cell : this.road.getRightLine()) {
-            this.grid.setCell(cell);
-        }
+        this.roads.forEach(road -> {
+            road.getLines().forEach(cell -> {
+                this.grid.setCell(cell);
+            });
+        });
 
         spawnAgent("vehicle1", new Position(0, 1));
-        spawnAgent("vehicle2", new Position(4, 2));
+        spawnAgent("vehicle2", new Position(4, 0));
         updateObservableProperties();
     }
 
@@ -73,10 +86,43 @@ public class TrafficEnvironment extends Artifact {
     private void setupTrafficLights() {
         this.trafficLightPositions.add(new Position(2, 1));
         this.trafficLightPositions.add(new Position(2, 2));
+    }
 
-        // for (Position pos : this.trafficLightPositions) {
-        // defineObsProperty("traffic_light_position", pos.getX(), pos.getY());
-        // }
+    @OPERATION
+    public void explore(String agentId, int x, int y, String currentDirection) {
+        Position currentPosition = new Position(x, y);
+        System.out.println(
+                "currently discovering turns from position: " + currentPosition.getX() + ", " + currentPosition.getY());
+
+        List<Turn> possibleTurns = this.availableTurns.stream()
+                .filter(turn -> {
+                    Position fromPosition = turn.getFromPosition();
+                    System.out
+                            .println("Checking turn to position: " + fromPosition.getX() + ", " + fromPosition.getY());
+                    System.out.println("Current position: " + currentPosition.getX() + ", " + currentPosition.getY());
+                    // Check if the turn's toPosition matches the provided x and y
+                    return fromPosition.getX() == x && fromPosition.getY() == y;
+                })
+                .collect(Collectors.toList());
+
+        for (Turn turn : possibleTurns) {
+            if (!this.discoveredTurns.contains(turn)) {
+                this.discoveredTurns.add(turn);
+
+                defineObsProperty("turn_available",
+                        turn.getFromPosition().getX(),
+                        turn.getFromPosition().getY(),
+                        turn.getToPosition().getX(),
+                        turn.getToPosition().getY());
+
+                signal("turn_discovered", agentId,
+                        turn.getFromPosition().getX(),
+                        turn.getFromPosition().getY(),
+                        turn.getToPosition().getX(),
+                        turn.getToPosition().getY());
+            }
+        }
+
     }
 
     @OPERATION
@@ -118,29 +164,55 @@ public class TrafficEnvironment extends Artifact {
                     agentPositions.get(agent).getY());
 
             Position currentPosition = cell.getPosition();
+            Position nextPosition = null;
 
             if (currentPosition != null) {
-                Position nextPosition = computeNextPosition(cell, action);
 
-                if (nextPosition != null && isPositionWithinBounds(nextPosition)
-                        && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
-                        && road.getLines().contains(grid.getCell(nextPosition.getX(),
-                                nextPosition.getY()))
-                        && !grid.getCell(nextPosition.getX(), nextPosition.getY()).isOccupied()) {
-
-                    agentPositions.put(agent, nextPosition);
-                    grid.getCell(currentPosition.getX(),
-                            currentPosition.getY()).setOccupied(false);
-                    grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
-                    System.out.println("Agent " + agent + " moved to position: " + nextPosition.getX() + ", "
-                            + nextPosition.getY());
+                // action handling
+                if (action.equals("follow")) {
+                    nextPosition = computeNextPosition(cell, action);
+                } else if (action.startsWith("turn:")) {
+                    System.out.println("[handleStepLogic] Processing turn action for agent [handleStepLogic]");
+                    System.out.println("[handleStepLogic] Action: " + action);
+                    nextPosition = parseTurnAction(agent, action);
+                    if (nextPosition != null) {
+                        Turn turn = new Turn(currentPosition, nextPosition);
+                        if (!this.discoveredTurns.contains(turn)) {
+                            nextPosition = computeNextPosition(cell, action);
+                        }
+                    }
+                } else if (action.equals("wait")) {
+                    nextPosition = currentPosition;
                 } else {
-                    System.out.println(
-                            "Agent " + agent + " cannot move, next position is out of bounds or occupied.");
+                    nextPosition = currentPosition;
+                }
+
+                // action execution
+                if (nextPosition != null && !nextPosition.equals(currentPosition)) {
+                    if (isPositionWithinBounds(nextPosition)
+                            && grid.getCell(nextPosition.getX(), nextPosition.getY()) != null
+                            && isInsideAnyRoad(nextPosition)
+                            && !grid.getCell(nextPosition.getX(), nextPosition.getY()).isOccupied()) {
+                        System.out.println("executing action: " + action + " for agent: " + agent);
+
+                        agentPositions.put(agent, nextPosition);
+                        grid.getCell(currentPosition.getX(),
+                                currentPosition.getY()).setOccupied(false);
+                        grid.getCell(nextPosition.getX(), nextPosition.getY()).setOccupied(true);
+                        System.out.println("Agent " + agent + " moved to position: " + nextPosition.getX() + ", "
+                                + nextPosition.getY());
+                    }
+                } else {
+                    System.out.println("No movement for agent: " + agent);
                 }
             }
         }
         updateObservableProperties();
+    }
+
+    private boolean isInsideAnyRoad(Position position) {
+        return this.roads.stream()
+                .anyMatch(road -> road.getLines().contains(grid.getCell(position.getX(), position.getY())));
     }
 
     @OPERATION
@@ -152,10 +224,21 @@ public class TrafficEnvironment extends Artifact {
 
     private void spawnAgent(String agentId, Position position) {
         Cell cell = grid.getCell(position.getX(), position.getY());
-        if (cell != null && !cell.isOccupied() && this.road.getLines().contains(cell)) {
+        if (cell != null && !cell.isOccupied() && isInsideAnyRoad(cell.getPosition())) {
             cell.setOccupied(true);
             this.agentPositions.put(agentId, position);
         }
+    }
+
+    @OPERATION
+    void writeIntent(String agent, String action) {
+        System.out.println("Write intent called: " + agent + " -> " + action);
+
+        synchronized (agentActions) {
+            this.agentActions.put(agent, action);
+            System.out.println("Actions map size: " + this.agentActions.size());
+        }
+        updateIntentions();
     }
 
     private void updateIntentions() {
@@ -169,13 +252,37 @@ public class TrafficEnvironment extends Artifact {
                 String agent = entry.getKey();
                 String action = entry.getValue();
                 Position currentPosition = agentPositions.get(agent);
+                Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
+                Position desiredPosition = null;
 
-                if (currentPosition != null && action.equals("follow")) {
-                    Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
-                    Position desiredPosition = computeNextPosition(currentCell, action);
+                if (currentPosition != null) {
+                    if (action.equals("follow")) {
+
+                        if (computeNextPosition(currentCell, action) != null) {
+                            desiredPosition = computeNextPosition(currentCell, action);
+                            defineObsProperty("agent_intention", agent, desiredPosition.getX(), desiredPosition.getY(),
+                                    action);
+                            this.observableProperties.add("agent_intention");
+                        }
+                    } else if (action.startsWith("turn:")) {
+                        Position destination = parseTurnAction(agent, action);
+
+                        if (destination != null) {
+                            Turn turn = new Turn(currentPosition, destination);
+                            if (this.discoveredTurns.contains(turn)) {
+                                desiredPosition = turn.getToPosition();
+                            } else {
+                                desiredPosition = computeNextPosition(currentCell, action);
+                            }
+                        }
+                    } else if (action.equals("wait")) {
+                        desiredPosition = currentPosition;
+                    }
 
                     if (desiredPosition != null) {
-                        defineObsProperty("agent_intention", agent, desiredPosition.getX(), desiredPosition.getY(),
+                        defineObsProperty("agent_intention", agent,
+                                desiredPosition.getX(),
+                                desiredPosition.getY(),
                                 action);
                         this.observableProperties.add("agent_intention");
                     }
@@ -184,12 +291,20 @@ public class TrafficEnvironment extends Artifact {
         }
     }
 
-    @OPERATION
-    void writeIntent(String agent, String action) {
-        synchronized (agentActions) {
-            this.agentActions.put(agent, action);
+    private Position parseTurnAction(String agentId, String action) {
+        try {
+            String[] parts = action.substring(5).split(",");
+            if (parts.length == 2) {
+                int toX = Integer.parseInt(parts[0]);
+                int toY = Integer.parseInt(parts[1]);
+                return new Position(toX, toY);
+            }
+        } catch (Exception e) {
+
+        } finally {
+
         }
-        updateIntentions();
+        return null;
     }
 
     @OPERATION
