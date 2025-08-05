@@ -27,6 +27,7 @@ import perception.PerceptionObserver;
 import road.BasicRoadFactoryImpl;
 import road.Road;
 import road.RoadFactory;
+import core.Utils;
 
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener {
 
@@ -252,25 +253,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
             }
         } else {
             Cell cell = grid.getCell(currentPosition.getX(), currentPosition.getY());
-            return computeNextPosition(cell);
-        }
-    }
-
-    private Position computeNextPosition(Cell cell) {
-        int x = cell.getPosition().getX();
-        int y = cell.getPosition().getY();
-
-        switch (cell.getDirection()) {
-            case "North":
-                return new Position(x, y - 1);
-            case "South":
-                return new Position(x, y + 1);
-            case "East":
-                return new Position(x + 1, y);
-            case "West":
-                return new Position(x - 1, y);
-            default:
-                return cell.getPosition();
+            return Utils.computeNextPosition(cell);
         }
     }
 

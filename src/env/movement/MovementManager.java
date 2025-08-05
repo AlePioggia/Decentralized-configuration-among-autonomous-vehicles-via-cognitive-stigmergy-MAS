@@ -9,6 +9,7 @@ import core.Cell;
 import core.Grid;
 import core.Position;
 import road.Road;
+import core.Utils;
 
 public class MovementManager {
     private final Grid grid;
@@ -48,7 +49,7 @@ public class MovementManager {
         Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
         Position nextPosition = computeNextPosition(currentCell);
 
-        if (canMoveTo(nextPosition)) {
+        if (Utils.isValidPosition(nextPosition, grid, roads)) {
             executeMovement(agent, currentPosition, nextPosition);
             return MovementResult.successResult(agent, currentPosition, nextPosition, agent);
         } else {
@@ -57,32 +58,18 @@ public class MovementManager {
     }
 
     private MovementResult executeTurnAction(String agent, Position currentPosition, String action) {
-        Position destination = parseTurnDestination(action);
+        Position destination = Utils.parseTurnAction(action);
 
         if (destination == null) {
             return MovementResult.failureResult(agent, currentPosition, null, "Invalid turn action format");
         }
 
-        if (canMoveTo(destination)) {
+        if (Utils.isValidPosition(destination, grid, roads)) {
             executeMovement(agent, currentPosition, destination);
             return MovementResult.successResult(agent, currentPosition, destination, action);
         } else {
             return MovementResult.failureResult(agent, currentPosition, destination, "Turn destination blocked");
         }
-    }
-
-    private Position parseTurnDestination(String action) {
-        try {
-            String[] parts = action.substring(5).split(",");
-            if (parts.length == 2) {
-                int x = Integer.parseInt(parts[0].trim());
-                int y = Integer.parseInt(parts[1].trim());
-                return new Position(x, y);
-            }
-        } catch (Exception e) {
-            System.err.println("Error parsing turn action: " + action);
-        }
-        return null;
     }
 
     private Position computeNextPosition(Cell cell) {
@@ -103,11 +90,8 @@ public class MovementManager {
         }
     }
 
-    public boolean canMoveTo(Position position) {
-        return isPositionWithinBounds(position)
-                && grid.getCell(position.getX(), position.getY()) != null
-                && isInsideAnyRoad(position)
-                && !grid.getCell(position.getX(), position.getY()).isOccupied();
+    public List<Road> getRoads() {
+        return this.roads;
     }
 
     public void executeMovement(String agent, Position from, Position to) {
@@ -122,16 +106,6 @@ public class MovementManager {
 
     public Grid getGrid() {
         return grid;
-    }
-
-    private boolean isInsideAnyRoad(Position position) {
-        return roads.stream()
-                .anyMatch(road -> road.getLines().contains(grid.getCell(position.getX(), position.getY())));
-    }
-
-    private boolean isPositionWithinBounds(Position position) {
-        return position.getX() >= 0 && position.getX() < grid.getWidth()
-                && position.getY() >= 0 && position.getY() < grid.getHeight();
     }
 
 }
