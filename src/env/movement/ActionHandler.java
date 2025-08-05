@@ -1,5 +1,5 @@
 package movement;
 
 public interface ActionHandler {
-    MovementResult execute(String agentId, String action, MovementManager movementManager);
+    public MovementResult execute(String agentId, String action, MovementManager movementManager);
 }

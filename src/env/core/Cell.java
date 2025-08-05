@@ -36,4 +36,39 @@ public class Cell {
     public Position getPosition() {
         return this.position.getPosition();
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((position == null) ? 0 : position.hashCode());
+        result = prime * result + ((direction == null) ? 0 : direction.hashCode());
+        result = prime * result + (isOccupied ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Cell other = (Cell) obj;
+        if (position == null) {
+            if (other.position != null)
+                return false;
+        } else if (!position.equals(other.position))
+            return false;
+        if (direction == null) {
+            if (other.direction != null)
+                return false;
+        } else if (!direction.equals(other.direction))
+            return false;
+        if (isOccupied != other.isOccupied)
+            return false;
+        return true;
+    }
+
 }
