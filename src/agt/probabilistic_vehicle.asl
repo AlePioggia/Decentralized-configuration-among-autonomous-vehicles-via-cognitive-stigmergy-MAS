@@ -143,8 +143,8 @@
 
 +!traffic_light_handler(NextX, NextY) : get_name(ME) & 
     not light_current_state(NextX, NextY, _) <-
-    .print(ME, Unknown light state at (", NextX, ",", NextY, "), waiting");
-    writeIntent(ME, "wait").
+        .print(ME, "Unknown light state at (", NextX, ",", NextY, "), waiting");
+        writeIntent(ME, "wait").
 
 +!ordinary_logic(NextX, NextY) : get_name(ME) <- 
     if (not occupied(NextX, NextY)) {
