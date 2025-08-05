@@ -196,15 +196,11 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void setupTimer() {
-        timer = new Timer("TrafficEnvironmentTimer", true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    execInternalOp("step");
-                } catch (Exception ex) {
-                    System.err.println("Error in timer: " + ex.getMessage());
-                }
+        timer = Utils.createTimer("TrafficEnvironmentTimer", () -> {
+            try {
+                execInternalOp("step");
+            } catch (Exception ex) {
+                System.err.println("Error in timer: " + ex.getMessage());
             }
         }, interval, interval);
 

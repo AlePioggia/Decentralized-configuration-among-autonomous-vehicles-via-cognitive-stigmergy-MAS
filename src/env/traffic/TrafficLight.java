@@ -6,6 +6,7 @@ import cartago.Artifact;
 import cartago.INTERNAL_OPERATION;
 import cartago.OPERATION;
 import core.Position;
+import core.Utils;
 
 public class TrafficLight extends Artifact {
 
@@ -24,11 +25,11 @@ public class TrafficLight extends Artifact {
     }
 
     private void startTimer() {
-        this.timer = new Timer("TrafficLightTimer", true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
+        this.timer = Utils.createTimer("TrafficEnvironmentTimer", () -> {
+            try {
                 execInternalOp("toggleLight");
+            } catch (Exception ex) {
+                System.err.println("Error in timer: " + ex.getMessage());
             }
         }, LIGHT_DURATION, LIGHT_DURATION);
     }

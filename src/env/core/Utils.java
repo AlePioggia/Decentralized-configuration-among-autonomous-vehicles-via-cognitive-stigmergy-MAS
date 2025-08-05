@@ -1,6 +1,8 @@
 package core;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import road.Road;
 
@@ -53,5 +55,16 @@ public class Utils {
     public static boolean isInsideAnyRoad(Position position, Grid grid, List<Road> roads) {
         return roads.stream()
                 .anyMatch(road -> road.getLines().contains(grid.getCell(position.getX(), position.getY())));
+    }
+
+    public static Timer createTimer(String name, Runnable task, long delay, long period) {
+        Timer timer = new Timer(name, true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                task.run();
+            }
+        }, delay, period);
+        return timer;
     }
 }
