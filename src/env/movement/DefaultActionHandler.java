@@ -1,3 +1,7 @@
+package movement;
+
+import core.Position;
+
 public class DefaultActionHandler implements ActionHandler {
 
     @Override

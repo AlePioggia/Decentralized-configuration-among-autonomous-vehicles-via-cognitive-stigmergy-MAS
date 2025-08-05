@@ -1,7 +1,14 @@
+package movement;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import core.Cell;
+import core.Grid;
+import core.Position;
+import road.Road;
 
 public class MovementManager {
     private final Grid grid;

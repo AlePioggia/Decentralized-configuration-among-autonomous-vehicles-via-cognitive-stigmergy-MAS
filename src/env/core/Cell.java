@@ -1,3 +1,5 @@
+package core;
+
 public class Cell {
     private Position position;
     private String direction;

@@ -1,4 +1,8 @@
+package discovery;
+
 import java.util.List;
+
+import core.Position;
 
 public interface TurnDiscoveryListener {
     void onTurnDiscovered(String agentId, Turn turn);

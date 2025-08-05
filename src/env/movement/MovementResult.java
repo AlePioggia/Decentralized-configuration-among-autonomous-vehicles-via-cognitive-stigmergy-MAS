@@ -1,3 +1,7 @@
+package movement;
+
+import core.Position;
+
 public class MovementResult {
     private final boolean success;
     private final String agentId;

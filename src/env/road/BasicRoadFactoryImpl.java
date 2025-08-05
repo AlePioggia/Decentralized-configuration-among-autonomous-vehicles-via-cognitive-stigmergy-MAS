@@ -1,6 +1,10 @@
+package road;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+
+import core.Cell;
 
 public class BasicRoadFactoryImpl implements RoadFactory {
     @Override

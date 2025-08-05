@@ -1,3 +1,7 @@
+package discovery;
+
+import core.Position;
+
 public class Turn {
     private final Position fromPosition;
     private final Position toPosition;

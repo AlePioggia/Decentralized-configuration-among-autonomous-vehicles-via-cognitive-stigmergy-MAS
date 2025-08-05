@@ -1,3 +1,8 @@
+package movement;
+
+import core.Cell;
+import core.Position;
+
 public class FollowActionHandler implements ActionHandler {
     @Override
     public MovementResult execute(String agent, String action, MovementManager movementManager) {

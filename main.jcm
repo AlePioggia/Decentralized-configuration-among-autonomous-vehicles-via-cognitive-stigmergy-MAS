@@ -22,9 +22,9 @@ mas main {
   }
 
   workspace w {
-    artifact trafficEnv: TrafficEnvironment()
-    artifact light1: TrafficLight(2, 1)
-    artifact light2: TrafficLight(2, 2)
+    artifact trafficEnv: traffic.TrafficEnvironment()
+    artifact light1: traffic.TrafficLight(2, 1)
+    artifact light2: traffic.TrafficLight(2, 2)
   }
 
 }

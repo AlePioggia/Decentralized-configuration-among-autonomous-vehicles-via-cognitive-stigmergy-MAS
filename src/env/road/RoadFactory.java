@@ -1,3 +1,5 @@
+package road;
+
 public interface RoadFactory {
     public Road createHorizontalRoad(int x, int length, int y1, int y2);
 

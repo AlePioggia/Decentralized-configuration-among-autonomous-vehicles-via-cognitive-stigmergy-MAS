@@ -1,3 +1,5 @@
+package traffic;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +11,22 @@ import cartago.Artifact;
 import cartago.INTERNAL_OPERATION;
 import cartago.OPERATION;
 import cartago.OpFeedbackParam;
+import core.Cell;
+import core.Grid;
+import core.Position;
+import discovery.Turn;
+import discovery.TurnDiscoveryListener;
+import discovery.TurnDiscoveryService;
+import movement.ActionHandlerFactory;
+import movement.DefaultActionHandler;
+import movement.FollowActionHandler;
+import movement.MovementManager;
+import movement.MovementResult;
+import movement.TurnActionHandler;
+import perception.PerceptionObserver;
+import road.BasicRoadFactoryImpl;
+import road.Road;
+import road.RoadFactory;
 
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener {
 
