@@ -126,15 +126,13 @@ task showTestOutput(type: JavaExec) {
     args = ['src/test/tests.jcm']
     classpath = sourceSets.main.runtimeClasspath
     
-    // ✅ OUTPUT DIRETTO
     standardOutput = System.out
     errorOutput = System.err
     
-    // ✅ TIMEOUT
     timeout = Duration.ofSeconds(8)
     
     doFirst {
-        println "🚀 Starting JaCaMo tests with visible output..."
+        println "Starting JaCaMo tests with visible output..."
     }
 }
 
