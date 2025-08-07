@@ -1,8 +1,13 @@
 mas unit_tests {
 
-    agent test_sample: sample_agent.asl {
-        beliefs: agent_purpose("testing")
+    agent test_runner: test-runner.asl
+    agent test_vehicle: test-probable_vehicle.asl
+
+    workspace main {
+        artifact trafficEnv: traffic.TrafficEnvironment
+        artifact light1: traffic.TrafficLight(2, 1)
+        artifact light2: traffic.TrafficLight(2, 2)
     }
 
-    asl-path: "src/agt"
+    asl-path: "src/test/agt"
 }
