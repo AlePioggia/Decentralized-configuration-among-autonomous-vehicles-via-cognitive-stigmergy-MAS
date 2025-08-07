@@ -118,7 +118,7 @@ task uberJar(type: Jar, dependsOn: 'classes') {
     }
 }
 
-task showTestOutput(type: JavaExec) {
+task runAslTests(type: JavaExec) {
     group = 'verification'
     description = 'runs JaCaMo tests with visible output'
     
