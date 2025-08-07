@@ -15,7 +15,7 @@ repositories {
     maven { url "https://raw.githubusercontent.com/jacamo-lang/mvn-repo/master" }
     maven { url "https://repo.gradle.org/gradle/libs-releases" }
 
-    //flatDir { dirs 'lib' }
+    flatDir { dirs 'lib' }
 
     mavenCentral()
     maven { url "https://jitpack.io" }
@@ -118,6 +118,25 @@ task uberJar(type: Jar, dependsOn: 'classes') {
     }
 }
 
+task showTestOutput(type: JavaExec) {
+    group = 'verification'
+    description = 'runs JaCaMo tests with visible output'
+    
+    mainClass = 'jacamo.infra.JaCaMoLauncher'
+    args = ['src/test/tests.jcm']
+    classpath = sourceSets.main.runtimeClasspath
+    
+    // ✅ OUTPUT DIRETTO
+    standardOutput = System.out
+    errorOutput = System.err
+    
+    // ✅ TIMEOUT
+    timeout = Duration.ofSeconds(8)
+    
+    doFirst {
+        println "🚀 Starting JaCaMo tests with visible output..."
+    }
+}
 
 task testJaCaMo {
     description 'runs JaCaMo unit tests'
