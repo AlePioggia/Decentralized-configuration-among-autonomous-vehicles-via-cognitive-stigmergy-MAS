@@ -11,12 +11,12 @@
 
 mas main {
 
-  agent vehicle1: probabilistic_vehicle.asl {
+  agent vehicle1: probabilistic_vehicle/complete_vehicle.asl {
     beliefs: name("vehicle1")
     focus: w.trafficEnv, w.light1, w.light2
   }
 
-  agent vehicle2: probabilistic_vehicle.asl {
+  agent vehicle2: probabilistic_vehicle/complete_vehicle.asl {
     beliefs: name("vehicle2")
     focus: w.trafficEnv, w.light1, w.light2
   }

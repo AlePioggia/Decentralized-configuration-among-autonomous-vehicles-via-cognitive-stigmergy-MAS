@@ -1,7 +1,6 @@
 package traffic;
 
 import java.util.Timer;
-import java.util.TimerTask;
 import cartago.Artifact;
 import cartago.INTERNAL_OPERATION;
 import cartago.OPERATION;
