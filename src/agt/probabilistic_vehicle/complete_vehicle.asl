@@ -1,8 +1,8 @@
-{ include("probabilistic_vehicle/modules/perception.asl") }
-{ include("probabilistic_vehicle/modules/turn_discovery.asl") }
-{ include("probabilistic_vehicle/modules/movement.asl") }
-{ include("probabilistic_vehicle/modules/traffic_management.asl") }
-{ include("probabilistic_vehicle/modules/coordination.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/perception.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/turn_discovery.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/movement.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/traffic_management.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/coordination.asl") }
 
 +name(N) <- 
     +get_name(N);
