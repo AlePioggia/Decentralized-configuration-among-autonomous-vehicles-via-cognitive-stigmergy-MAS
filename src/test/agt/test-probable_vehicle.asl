@@ -59,3 +59,20 @@
     ?next_position(1, 0, "West", NextX, NextY);
     !assert_equals(NextX, 0);
     !assert_equals(NextY, 0).
+
+@[test]
++!test_execute_move <- 
+    +occupied(1, 0);
+    +get_name("test");
+    +at("test", 0, 0);
+    
+    !execute_move(1, 0);
+    .wait(300);
+
+    if (agent_intention("test", 0, 0, "wait")) {
+        .print("test passed");
+    } else {
+        .print("test failed");
+    };
+
+    -occupied(1, 0).

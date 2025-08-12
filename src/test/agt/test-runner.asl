@@ -8,5 +8,6 @@
     !test_next_position_south;
     !test_next_position_east;
     !test_next_position_west;
+    !test_execute_move;
     .print(" completed tests ");
     .stopMAS.

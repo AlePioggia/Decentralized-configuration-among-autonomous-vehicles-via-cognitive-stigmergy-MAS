@@ -1,7 +1,12 @@
 mas unit_tests {
 
-    agent test_runner: test-runner.asl
-    agent test_vehicle: test-probable_vehicle.asl
+    agent test_runner: test-runner.asl{
+        focus: main.trafficEnv, main.light1, main.light2
+    }
+
+    agent test_vehicle: test-probable_vehicle.asl{
+        focus: main.trafficEnv, main.light1, main.light2
+    }
 
     workspace main {
         artifact trafficEnv: traffic.TrafficEnvironment
