@@ -18,6 +18,8 @@ public class ActionHandlerFactory {
             return handlers.get("turn");
         } else if (action.equals("wait")) {
             return handlers.get("wait");
+        } else if (action.equals("intersection:")) {
+            return handlers.get("intersection");
         } else {
             return handlers.get("default");
         }

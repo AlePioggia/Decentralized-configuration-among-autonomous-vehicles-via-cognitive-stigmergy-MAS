@@ -1,5 +1,9 @@
 { include ("src/agt/probabilistic_vehicle/complete_vehicle.asl") }
 
++writeIntent(Agent, Action) <- 
+    .print("mock: ", Agent, " , ", Action);
+    +mock_action(Agent, Action).
+
 +!assert_true(Condition) <-
     .print("Asserting condition: ", Condition);
     if (Condition) {
@@ -22,7 +26,6 @@
     .print("Checking if belief exists: ", Belief);
     if (Belief) {
         .print("Test passed: belief exists - ", Belief);
-        .fail("Belief not found: ", Belief);
     }.
 
 
@@ -61,18 +64,42 @@
     !assert_equals(NextY, 0).
 
 @[test]
-+!test_execute_move <- 
++!test_execute_move_mock <- 
     +occupied(1, 0);
     +get_name("test");
+    +direction(0, 0, "East");
     +at("test", 0, 0);
     
     !execute_move(1, 0);
-    .wait(300);
+    .wait(100);
 
-    if (agent_intention("test", 0, 0, "wait")) {
-        .print("test passed");
+    if (mock_action("test", "wait")) {
+        .print("execute move test passed");
     } else {
-        .print("test failed");
+        .print("execute move test failed");
     };
 
-    -occupied(1, 0).
+    -occupied(1, 0);
+    -mock_action(_, _).
+
+@[test]
++!test_turn <- 
+    +get_name("test");
+
+    +known_turn(2, 2, 3, 2);
+
+    ?get_available_turns(2, 2, AvailableTurns);
+    !execute_turn(2, 2, AvailableTurns);
+    .wait(200);
+
+    .findall(test_action(Agent, Action), test_action(Agent, Action), Actions);
+
+    for (.member(test_action("test", Action), Actions)) {
+        if (.substring("turn:", Action, 0)) {
+            .print("turn test passed");
+        };
+    };
+
+    -known_turn(_, _, _, _);
+    -get_name("test");
+    -test_action(_, _).
