@@ -15,60 +15,65 @@ public class MovementManager {
     private final Grid grid;
     private Map<String, Position> agentPositions;
     private final List<Road> roads;
+    private Map<String, Position> agentIntentions;
 
     public MovementManager(Grid grid) {
         this.grid = grid;
         this.agentPositions = new HashMap<>();
         this.roads = new ArrayList<>();
+        this.agentIntentions = new HashMap<>();
     }
 
     public MovementManager(Grid grid, Map<String, Position> agentPositions, List<Road> roads) {
         this.grid = grid;
         this.agentPositions = agentPositions;
         this.roads = roads;
+        this.agentIntentions = new HashMap<>();
+    }
+
+    public MovementManager(Grid grid, Map<String, Position> agentPositions, List<Road> roads,
+            Map<String, Position> agentIntentions) {
+        this.grid = grid;
+        this.agentPositions = agentPositions;
+        this.roads = roads;
+        this.agentIntentions = agentIntentions;
     }
 
     public MovementResult executeAction(String agentId, String action) {
         Position currentPosition = this.agentPositions.get(agentId);
+        if (currentPosition == null) {
+            return MovementResult.failureResult(agentId, currentPosition, currentPosition, action);
+        }
+        ActionHandler handler = ActionHandlerFactory.getHandler(action);
+        if (handler == null) {
+            return MovementResult.failureResult(agentId, currentPosition, currentPosition, action);
+        }
 
-        if (currentPosition != null) {
-            if (action.equals("follow")) {
-                return executeFollowAction(agentId, currentPosition);
+        return handler.execute(agentId, action, this);
+    }
+
+    public void updateIntentions(Map<String, String> agentActions) {
+        agentIntentions.clear();
+        for (Map.Entry<String, String> entry : agentActions.entrySet()) {
+            String agentId = entry.getKey();
+            String action = entry.getValue();
+            Position current = agentPositions.get(agentId);
+            if (current == null)
+                continue;
+
+            Position intendedDestination = null;
+
+            if ("wait".equals(action)) {
+                intendedDestination = current;
             } else if (action.startsWith("turn:")) {
-                return executeTurnAction(agentId, currentPosition, action);
-            } else if (action.equals("wait")) {
-                return MovementResult.failureResult(agentId, currentPosition, null, "Waiting action executed");
-            } else {
-                return MovementResult.failureResult(agentId, currentPosition, null, "Unknown action: " + action);
+                intendedDestination = Utils.parseTurnAction(action);
+            } else if ("follow".equals(action)) {
+                Cell cell = grid.getCell(current.getX(), current.getY());
+                intendedDestination = computeNextPosition(cell);
             }
-        }
-        return MovementResult.failureResult(agentId, null, null, "Agent not found");
-    }
-
-    private MovementResult executeFollowAction(String agent, Position currentPosition) {
-        Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
-        Position nextPosition = computeNextPosition(currentCell);
-
-        if (Utils.isValidPosition(nextPosition, grid, roads)) {
-            executeMovement(agent, currentPosition, nextPosition);
-            return MovementResult.successResult(agent, currentPosition, nextPosition, agent);
-        } else {
-            return MovementResult.failureResult(agent, currentPosition, nextPosition, "Path blocked");
-        }
-    }
-
-    private MovementResult executeTurnAction(String agent, Position currentPosition, String action) {
-        Position destination = Utils.parseTurnAction(action);
-
-        if (destination == null) {
-            return MovementResult.failureResult(agent, currentPosition, null, "Invalid turn action format");
-        }
-
-        if (Utils.isValidPosition(destination, grid, roads)) {
-            executeMovement(agent, currentPosition, destination);
-            return MovementResult.successResult(agent, currentPosition, destination, action);
-        } else {
-            return MovementResult.failureResult(agent, currentPosition, destination, "Turn destination blocked");
+            if (intendedDestination != null && !intendedDestination.equals(current)) {
+                agentIntentions.put(agentId, intendedDestination);
+            }
         }
     }
 

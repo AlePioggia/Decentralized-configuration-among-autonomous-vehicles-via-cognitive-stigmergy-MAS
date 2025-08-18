@@ -120,6 +120,8 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             synchronized (agentActions) {
                 actionsCopy = new HashMap<>(this.agentActions);
+                movementManager.updateIntentions(actionsCopy);
+
                 this.agentActions.clear();
             }
 
