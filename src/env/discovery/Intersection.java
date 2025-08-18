@@ -19,10 +19,10 @@ public class Intersection {
 
     private Map<String, Position> computeExits() {
         Map<String, Position> exits = new HashMap<>();
-        exits.put("north", new Position(this.position.getX(), this.position.getY()));
-        exits.put("south", new Position(this.position.getX(), this.position.getY()));
-        exits.put("east", new Position(this.position.getX(), this.position.getY()));
-        exits.put("west", new Position(this.position.getX(), this.position.getY()));
+        exits.put("north", new Position(this.position.getX(), this.position.getY() - 1));
+        exits.put("south", new Position(this.position.getX(), this.position.getY() + 1));
+        exits.put("east", new Position(this.position.getX() + 1, this.position.getY()));
+        exits.put("west", new Position(this.position.getX() - 1, this.position.getY()));
         return exits;
     }
 
