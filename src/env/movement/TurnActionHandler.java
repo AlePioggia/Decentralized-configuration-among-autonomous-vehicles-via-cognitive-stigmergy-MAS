@@ -27,7 +27,8 @@ public class TurnActionHandler implements ActionHandler {
             return MovementResult.failureResult(agent, currentPosition, destination, "Turn not discovered");
         }
 
-        if (Utils.isValidPosition(destination, movementManager.getGrid(), movementManager.getRoads())) {
+        if (Utils.isValidPosition(destination, movementManager.getGrid(), movementManager.getRoads())
+                && movementManager.isIntendedPositionFree(agent, destination)) {
             movementManager.executeMovement(agent, currentPosition, destination);
             return MovementResult.successResult(agent, currentPosition, destination, action);
         } else {

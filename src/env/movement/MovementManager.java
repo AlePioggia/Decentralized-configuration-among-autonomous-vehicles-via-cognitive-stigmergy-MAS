@@ -77,6 +77,14 @@ public class MovementManager {
         }
     }
 
+    public boolean isIntendedPositionFree(String agentId, Position position) {
+        return this.agentIntentions
+                .entrySet()
+                .stream()
+                .noneMatch(entry -> !entry.getKey().equals(agentId) && entry.getValue().equals(position))
+                && !grid.getCell(position.getX(), position.getY()).isOccupied();
+    }
+
     private Position computeNextPosition(Cell cell) {
         int x = cell.getPosition().getX();
         int y = cell.getPosition().getY();
