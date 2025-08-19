@@ -16,11 +16,13 @@ public class MovementManager {
     private Map<String, Position> agentPositions;
     private final List<Road> roads;
     private Map<String, Position> agentIntentions;
+    private IntersectionPlanner intersectionPlanner;
 
     public MovementManager(Grid grid) {
         this.grid = grid;
         this.agentPositions = new HashMap<>();
         this.roads = new ArrayList<>();
+        this.intersectionPlanner = new IntersectionPlanner(grid, roads);
         this.agentIntentions = new HashMap<>();
     }
 
@@ -28,6 +30,7 @@ public class MovementManager {
         this.grid = grid;
         this.agentPositions = agentPositions;
         this.roads = roads;
+        this.intersectionPlanner = new IntersectionPlanner(grid, roads);
         this.agentIntentions = new HashMap<>();
     }
 
@@ -36,6 +39,7 @@ public class MovementManager {
         this.grid = grid;
         this.agentPositions = agentPositions;
         this.roads = roads;
+        this.intersectionPlanner = new IntersectionPlanner(grid, roads);
         this.agentIntentions = agentIntentions;
     }
 
@@ -67,6 +71,10 @@ public class MovementManager {
                 intendedDestination = current;
             } else if (action.startsWith("turn:")) {
                 intendedDestination = Utils.parseTurnAction(action);
+            } else if (action.startsWith("intersection:")) {
+                intendedDestination = (this.intersectionPlanner != null)
+                        ? this.intersectionPlanner.computeNext(current, action)
+                        : null;
             } else if ("follow".equals(action)) {
                 Cell cell = grid.getCell(current.getX(), current.getY());
                 intendedDestination = computeNextPosition(cell);
@@ -119,6 +127,10 @@ public class MovementManager {
 
     public Grid getGrid() {
         return grid;
+    }
+
+    public IntersectionPlanner getIntersectionPlanner() {
+        return this.intersectionPlanner;
     }
 
 }
