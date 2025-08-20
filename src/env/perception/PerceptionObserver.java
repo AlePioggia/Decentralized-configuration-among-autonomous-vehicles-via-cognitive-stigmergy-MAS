@@ -5,6 +5,7 @@ import java.util.Map;
 import core.Cell;
 import core.Grid;
 import core.Position;
+import discovery.Intersection;
 import discovery.Turn;
 
 public class PerceptionObserver {
@@ -39,11 +40,21 @@ public class PerceptionObserver {
     }
 
     public void notifyTurnAvailable(Turn turn) {
+        if (turn == null)
+            return;
         callback.defineObsProperty("turn_available",
                 turn.getFromPosition().getX(),
                 turn.getFromPosition().getY(),
                 turn.getToPosition().getX(),
                 turn.getToPosition().getY());
+    }
+
+    public void notifyIntersectionAvailable(Intersection intersection) {
+        if (intersection == null)
+            return;
+        for (Position p : intersection.getFootPrint()) {
+            callback.defineObsProperty("intersection_available", p.getX(), p.getY());
+        }
     }
 
     private void clearProperties() {

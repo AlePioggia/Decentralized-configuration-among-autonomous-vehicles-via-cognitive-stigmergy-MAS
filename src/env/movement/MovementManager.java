@@ -133,4 +133,8 @@ public class MovementManager {
         return this.intersectionPlanner;
     }
 
+    public void setIntersectionPlanner(IntersectionPlanner planner) {
+        this.intersectionPlanner = planner;
+    }
+
 }

@@ -2,8 +2,10 @@ package traffic;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 
 import cartago.Artifact;
@@ -13,12 +15,17 @@ import cartago.OpFeedbackParam;
 import core.Cell;
 import core.Grid;
 import core.Position;
+import discovery.Intersection;
+import discovery.IntersectionDiscoveryListener;
+import discovery.IntersectionDiscoveryService;
 import discovery.Turn;
 import discovery.TurnDiscoveryListener;
 import discovery.TurnDiscoveryService;
 import movement.ActionHandlerFactory;
 import movement.DefaultActionHandler;
 import movement.FollowActionHandler;
+import movement.IntersectionActionHandler;
+import movement.IntersectionPlanner;
 import movement.MovementManager;
 import movement.MovementResult;
 import movement.TurnActionHandler;
@@ -28,10 +35,11 @@ import road.Road;
 import road.RoadFactory;
 import core.Utils;
 
-public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener {
+public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener, IntersectionDiscoveryListener {
 
     private MovementManager movementManager;
     private TurnDiscoveryService turnDiscoveryService;
+    private IntersectionDiscoveryService intersectionDiscoveryService;
     private PerceptionObserver perceptionObserver;
 
     private Grid grid;
@@ -51,7 +59,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void initializeData() {
-        this.grid = new Grid(10, 10);
+        this.grid = new Grid(20, 20);
         this.agentActions = new HashMap<>();
         this.agentPositions = new HashMap<>();
         this.roads = new ArrayList<>();
@@ -87,8 +95,31 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private void setupEnvironment() {
         setupRoads();
+        setupIntersections();
         spawnAgents();
         updatePerceptions();
+    }
+
+    private void setupIntersections() {
+        IntersectionPlanner intersectionPlanner = new IntersectionPlanner(this.grid, this.roads);
+        this.movementManager.setIntersectionPlanner(intersectionPlanner);
+
+        List<Intersection> intersections = spawnIntersections();
+        this.intersectionDiscoveryService = new IntersectionDiscoveryService(intersections);
+        this.intersectionDiscoveryService.addListener(this);
+
+        ActionHandlerFactory.registerHandler("intersection",
+                new IntersectionActionHandler(intersectionPlanner, intersectionDiscoveryService));
+
+    }
+
+    private List<Intersection> spawnIntersections() {
+        Set<Position> footprint = new HashSet<>();
+        footprint.add(new Position(4, 1));
+        footprint.add(new Position(5, 1));
+        footprint.add(new Position(4, 0));
+        footprint.add(new Position(5, 0));
+        return List.of(new Intersection(footprint));
     }
 
     private void startSimulation() {
@@ -98,7 +129,12 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     @OPERATION
     public void explore(String agentId, int x, int y, String currentDirection) {
         Position currentPosition = new Position(x, y);
-        turnDiscoveryService.exploreTurns(agentId, currentPosition);
+        if (this.turnDiscoveryService != null) {
+            this.turnDiscoveryService.exploreTurns(agentId, currentPosition);
+        }
+        if (this.intersectionDiscoveryService != null) {
+            this.intersectionDiscoveryService.exploreIntersectionFromCurrentPosition(agentId, currentPosition);
+        }
     }
 
     @OPERATION
@@ -150,13 +186,22 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     @Override
     public void onTurnDiscovered(String agentId, Turn turn) {
-        perceptionObserver.notifyTurnAvailable(turn);
+        this.perceptionObserver.notifyTurnAvailable(turn);
 
         signal("turn_discovered", agentId,
                 turn.getFromPosition().getX(),
                 turn.getFromPosition().getY(),
                 turn.getToPosition().getX(),
                 turn.getToPosition().getY());
+    }
+
+    @Override
+    public void onIntersectionDiscovered(String agentId, Intersection intersection) {
+        this.perceptionObserver.notifyIntersectionAvailable(intersection);
+
+        signal("intersection_discovered", agentId,
+                intersection.getPosition().getX(),
+                intersection.getPosition().getY());
     }
 
     private List<Turn> setupAvailableTurns() {
@@ -169,7 +214,14 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         RoadFactory roadFactory = new BasicRoadFactoryImpl();
         Road mainRoad = roadFactory.createHorizontalRoad(0, 5, 0, 1);
         Road crossRoad = roadFactory.createVerticalRoad(2, 3, 2, 3);
-        this.roads.addAll(List.of(mainRoad, crossRoad));
+
+        Road intersectionAxis = roadFactory.createVerticalRoad(
+                4, 5,
+                0, 7);
+
+        this.roads.clear();
+
+        this.roads.addAll(List.of(mainRoad, crossRoad, intersectionAxis));
 
         this.roads.forEach(road -> {
             road.getLines().forEach(cell -> {
@@ -180,7 +232,8 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private void spawnAgents() {
         spawnAgent("vehicle1", new Position(0, 1));
-        spawnAgent("vehicle2", new Position(4, 0));
+        // spawnAgent("vehicle2", new Position(4, 0));
+        spawnAgent("vehicle2", new Position(4, 6));
     }
 
     private void spawnAgent(String agentId, Position position) {
@@ -248,6 +301,9 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
             } catch (Exception e) {
                 return currentPosition;
             }
+        } else if (action.startsWith("intersection:")) {
+            IntersectionPlanner planner = this.movementManager.getIntersectionPlanner();
+            return (planner != null) ? planner.computeNext(currentPosition, action) : null;
         } else {
             Cell cell = grid.getCell(currentPosition.getX(), currentPosition.getY());
             return Utils.computeNextPosition(cell);

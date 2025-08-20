@@ -2,13 +2,18 @@ package movement;
 
 import core.Position;
 import core.Utils;
+import discovery.Intersection;
+import discovery.IntersectionDiscoveryService;
 
 public class IntersectionActionHandler implements ActionHandler {
 
     private final IntersectionPlanner intersectionPlanner;
+    private final IntersectionDiscoveryService intersectionDiscoveryService;
 
-    public IntersectionActionHandler(IntersectionPlanner intersectionPlanner) {
+    public IntersectionActionHandler(IntersectionPlanner intersectionPlanner,
+            IntersectionDiscoveryService intersectionDiscoveryService) {
         this.intersectionPlanner = intersectionPlanner;
+        this.intersectionDiscoveryService = intersectionDiscoveryService;
     }
 
     @Override
@@ -17,6 +22,13 @@ public class IntersectionActionHandler implements ActionHandler {
         if (current == null) {
             return MovementResult.failureResult(agentId, null, null, action);
         }
+
+        Intersection requestedIntersection = this.intersectionDiscoveryService.getIntersectionByPosition(current);
+        if (requestedIntersection == null
+                || !this.intersectionDiscoveryService.hasIntersectionBeenDiscovered(requestedIntersection)) {
+            return MovementResult.failureResult(agentId, null, null, action);
+        }
+
         Position destination = this.intersectionPlanner.computeNext(current, action);
         if (destination == null || !Utils.isValidPosition(destination, movementManager.getGrid(),
                 movementManager.getRoads()) || !movementManager.isIntendedPositionFree(agentId, destination)) {

@@ -24,7 +24,8 @@ public class IntersectionDiscoveryService {
     public List<Intersection> exploreIntersectionFromCurrentPosition(String agentId, Position currentPosition) {
         List<Intersection> newlyDiscoveredIntersections = new ArrayList<>();
         List<Intersection> availableIntersections = this.availableIntersections.stream()
-                .filter(intersection -> intersection.getPosition().equals(currentPosition))
+                .filter(intersection -> intersection.getPosition().equals(currentPosition)
+                        || intersection.isNear(currentPosition, 1))
                 .collect(Collectors.toList());
 
         for (Intersection intersection : availableIntersections) {
@@ -45,6 +46,17 @@ public class IntersectionDiscoveryService {
         for (IntersectionDiscoveryListener listener : this.listeners) {
             listener.onIntersectionDiscovered(agentId, intersection);
         }
+    }
+
+    public Intersection getIntersectionByPosition(Position position) {
+        return this.availableIntersections.stream()
+                .filter(i -> i.contains(position) || i.isNear(position, 1))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean hasIntersectionBeenDiscovered(Intersection intersection) {
+        return this.discoveredIntersections.contains(intersection);
     }
 
 }

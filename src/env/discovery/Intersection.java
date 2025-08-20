@@ -1,8 +1,11 @@
 package discovery;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import core.Position;
@@ -11,10 +14,23 @@ public class Intersection {
 
     private final Position position;
     private final Map<String, Position> exits;
+    private final Set<Position> footprint;
 
-    public Intersection(Position position) {
-        this.position = position;
-        this.exits = new HashMap<>();
+    public Intersection(Position center) {
+        this.position = center;
+        HashSet<Position> fp = new HashSet<>();
+        fp.add(center);
+        this.footprint = Collections.unmodifiableSet(fp);
+        this.exits = computeExits();
+    }
+
+    public Intersection(Set<Position> footprint) {
+        if (footprint == null) {
+            throw new IllegalArgumentException("Footprint cannot be null");
+        }
+        this.footprint = Collections.unmodifiableSet(new HashSet<>(footprint));
+        this.position = this.footprint.iterator().next();
+        this.exits = computeExits();
     }
 
     private Map<String, Position> computeExits() {
@@ -36,6 +52,26 @@ public class Intersection {
 
     public Map<String, Position> getExits() {
         return this.exits;
+    }
+
+    public Set<Position> getFootPrint() {
+        return this.footprint;
+    }
+
+    public boolean contains(Position p) {
+        return p != null && footprint.contains(p);
+    }
+
+    public boolean isNear(Position p, int manhattan) {
+        if (p == null)
+            return false;
+        for (Position c : footprint) {
+            int dx = Math.abs(c.getX() - p.getX());
+            int dy = Math.abs(c.getY() - p.getY());
+            if (dx + dy <= manhattan)
+                return true;
+        }
+        return false;
     }
 
     @Override
