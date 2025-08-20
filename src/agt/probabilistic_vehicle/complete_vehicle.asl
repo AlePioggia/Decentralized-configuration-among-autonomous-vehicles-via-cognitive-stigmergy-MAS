@@ -3,6 +3,15 @@
 { include("src/agt/probabilistic_vehicle/modules/movement.asl") }
 { include("src/agt/probabilistic_vehicle/modules/traffic_management.asl") }
 { include("src/agt/probabilistic_vehicle/modules/coordination.asl") }
+{ include("src/agt/probabilistic_vehicle/modules/intersection_discovery.asl") }
+
++!choose_action : get_name(ME) & not at(ME, _, _) <-
+    .wait(200);
+    !choose_action.
+
++!choose_action : get_name(ME) & at(ME, X, Y) & not direction(X, Y, _) <-
+    .wait(200);
+    !choose_action.
 
 +name(N) <- 
     +get_name(N);
@@ -32,15 +41,22 @@
     explore(ME, X, Y, Direction);
     .wait(100);
     
+    // ?get_available_intersections(X, Y, AvailableIntersections);
     ?get_available_turns(X, Y, AvailableTurns);
     
-    if (AvailableTurns \== []) {
-        .print(ME, "Available turns from (", X, ",", Y, "): ", AvailableTurns);
-        !decide_turn_or_straight(X, Y, Direction, AvailableTurns);
+    if (has_available_intersections(X, Y)) {
+        .print(ME, "Intersection seen at (", X, ",", Y, ")");
+        !decide_intersection_or_straight(X, Y, Direction);
     } else {
-        .print(ME, "No turns available, proceeding straight");
-        !proceed_straight(X, Y, Direction);
+        if (AvailableTurns \== []) {
+            .print(ME, "Available turns from (", X, ",", Y, "): ", AvailableTurns);
+            !decide_turn_or_straight(X, Y, Direction, AvailableTurns);
+        } else {
+            .print(ME, "No turns available, proceeding straight");
+            !proceed_straight(X, Y, Direction);
+        }
     }.
+
 
 +!choose_action : get_name(ME) & at(ME, X, Y) <- 
     .print(ME, " no direction info at (", X, ",", Y, "), using fallback");
@@ -57,7 +73,7 @@
 
 +!decide_turn_or_straight(X, Y, Direction, AvailableTurns) : get_name(ME) <-
     .random(RandomValue);
-    TurnProbability = 0.8;
+    TurnProbability = 1;
     
     if (RandomValue < TurnProbability) {
         .print(ME, "[DECISION:] Taking a turn (", RandomValue, " < ", TurnProbability, ")");
@@ -66,6 +82,22 @@
         .print(ME, "[DECISION:] Going straight (", RandomValue, " >= ", TurnProbability, ")");
         !proceed_straight(X, Y, Direction);
     }.
+
++!decide_intersection_or_straight(X, Y, Direction) : get_name(ME) <-
+    .random(R);
+    if (R < 0.6) {
+        Target = "straight";
+    } 
+    else {
+        if (R < 0.85) {
+            Target = "right";
+        } else {
+            Target = "left";
+        }
+    };
+    
+    .print(ME, "[INTERSECTION DECISION:] ", Target);
+    !execute_intersection(Target).
 
 +!execute_turn(X, Y, AvailableTurns) : get_name(ME) <-
     .length(AvailableTurns, NumTurns);
@@ -80,6 +112,11 @@
     .concat(Part2, ToYStr, TurnAction);
     .print(ME, " Turn action: ", TurnAction);
     writeIntent(ME, TurnAction).
+
++!execute_intersection(Target) : get_name(ME) <-
+    .concat("intersection:", Target, Action);
+    .print(ME, " Intersection action: ",  Action);
+    writeIntent(ME, Action).
 
 +!proceed_straight(X, Y, Direction) : get_name(ME) <-
     ?next_position(X, Y, Direction, NextX, NextY);
