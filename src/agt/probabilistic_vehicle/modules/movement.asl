@@ -20,9 +20,8 @@
 
 +!execute_move(NextX, NextY) : get_name(ME) <-
     if (not occupied(NextX, NextY)) {
-        .print(ME, "Moving to (", NextX, ",", NextY, ")");
         writeIntent(ME, "follow");
     } else {
-        .print(ME, "Cell (", NextX, ",", NextY, ") occupied, waiting");
+        .print("[wait] Cell (", NextX, ",", NextY, ") occupied, waiting");
         writeIntent(ME, "wait");
     }.
