@@ -180,7 +180,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             MovementResult result = movementManager.executeAction(agent, action);
 
-            System.out.println("[Result] " + result.toString());
+            System.out.println("[result] " + result.toString());
         }
     }
 

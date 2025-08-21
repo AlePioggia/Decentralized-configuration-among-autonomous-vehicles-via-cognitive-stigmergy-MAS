@@ -93,4 +93,11 @@ public class MovementResult {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "[success=" + success + ", agentId=" + agentId + ", fromPosition="
+                + (fromPosition != null ? fromPosition.toString() : "")
+                + ", toPosition=" + (toPosition != null ? toPosition.toString() : "") + ", action=" + action + "]";
+    }
+
 }
