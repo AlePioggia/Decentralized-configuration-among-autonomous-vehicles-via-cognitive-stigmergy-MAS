@@ -2,11 +2,15 @@ package road;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import core.Cell;
 import core.Grid;
+import core.Position;
 
 public class RoadLayoutGenerator {
 
@@ -22,6 +26,129 @@ public class RoadLayoutGenerator {
 
     private RoadLayout buildRandomizedLayout(Grid grid, SimulationEnvironmentParams params) {
         return null;
+    }
+
+    private Set<Position[]> generateStandaloneTurns(Grid grid, int width, int height,
+            List<Integer> verticalBases, List<Integer> horizontalBases,
+            Set<Set<Position>> footprints,
+            int minDistFromIntersections, Random random, List<Road> outerRoads) {
+        Set<Position> intersectionCells = new LinkedHashSet<>();
+        footprints.forEach(footprint -> {
+            intersectionCells.addAll(footprint);
+        });
+        Set<Position> forbidden = expandForbidden(intersectionCells, width, height, minDistFromIntersections);
+
+        Set<String> usedKeys = new LinkedHashSet<>();
+        Set<Position[]> turns = new LinkedHashSet<>();
+
+        for (int x : verticalBases) {
+            List<Integer> ys = pickIndicesRandom(random, 2, Math.max(1, height - 3), 2, 3);
+            for (int y : ys) {
+                Position from = new Position(x, y);
+                Position to = new Position(x + 1, y);
+                if (!inBounds(to, width, height)) {
+                    continue;
+                }
+                if (forbidden.contains(from) || forbidden.contains(to)) {
+                    continue;
+                }
+                Cell startingPointCell = grid.getCell(from.getX(), from.getY());
+                if (startingPointCell == null
+                        || (!"North".equals(startingPointCell.getDirection())
+                                && !"South".equals(startingPointCell.getDirection())))
+                    continue;
+
+                Road horizontalTurn = createHorizontalTurn(grid, x, Math.min(x + 2, width - 1), y,
+                        Math.min(y + 1, height - 1));
+                if (horizontalTurn != null) {
+                    String keyFromStartToEnd = key(from, to);
+                    if (usedKeys.add(keyFromStartToEnd)) {
+                        outerRoads.add(horizontalTurn);
+                        turns.add(new Position[] { from, to });
+                    }
+                }
+            }
+        }
+
+        for (int y : horizontalBases) {
+            List<Integer> xs = pickIndicesRandom(random, 2, Math.min(1, height - 3), 2, 3);
+            for (int x : xs) {
+                Position from = new Position(x, y);
+                Position to = new Position(x, y + 1);
+                if (!inBounds(to, width, height)) {
+                    continue;
+                }
+                if (forbidden.contains(from) || forbidden.contains(to)) {
+                    continue;
+                }
+                Cell startingPointCell = grid.getCell(from.getX(), from.getY());
+                if (startingPointCell == null || !"East".equals(startingPointCell.getDirection())) {
+                    continue;
+                }
+                Road spur = createVerticalTurn(grid, x, Math.min(x + 1, width - 1), y, Math.min(y + 2, height - 1));
+                if (spur != null) {
+                    outerRoads.add(spur);
+                    String k = key(from, to);
+                    if (usedKeys.add(k)) {
+                        turns.add(new Position[] { from, to });
+                    }
+                }
+            }
+        }
+
+        return turns;
+    }
+
+    private Road createHorizontalTurn(Grid grid, int startX, int endX, int y1, int y2) {
+        if (endX <= startX || y2 <= y1 || startX < 0 || endX + 1 >= grid.getWidth() || y1 < 0
+                || y2 + 1 >= grid.getHeight()) {
+            return null;
+        }
+        RoadFactory roadFactory = new BasicRoadFactoryImpl();
+        IntStream.range(startX, endX + 1).forEach(x -> {
+            grid.getCell(x, y1).setDirection("West");
+            grid.getCell(x, y2).setDirection("East");
+        });
+        return roadFactory.createHorizontalRoad(startX, endX + 1, y1, y2);
+    }
+
+    private Road createVerticalTurn(Grid grid, int startY, int endY, int x1, int x2) {
+        if (startY <= endY || x1 < 0 || x2 + 1 >= grid.getWidth() || startY < 0 || endY + 1 >= grid.getHeight()) {
+            return null;
+        }
+        RoadFactory roadFactory = new BasicRoadFactoryImpl();
+        IntStream.range(startY, endY).forEach(y -> {
+            grid.getCell(x1, y).setDirection("North");
+            grid.getCell(x2, y).setDirection("South");
+        });
+        return roadFactory.createVerticalRoad(x1, x2, startY, endY + 1);
+    }
+
+    private static Set<Position> expandForbidden(Set<Position> seeds, int width, int height, int minDist) {
+        Set<Position> forb = new LinkedHashSet<>(seeds);
+        if (minDist <= 0)
+            return forb;
+        for (Position s : seeds) {
+            for (int dx = -minDist; dx <= minDist; dx++) {
+                for (int dy = -minDist; dy <= minDist; dy++) {
+                    int nx = s.getX() + dx, ny = s.getY() + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if (Math.abs(dx) + Math.abs(dy) <= minDist) {
+                            forb.add(new Position(nx, ny));
+                        }
+                    }
+                }
+            }
+        }
+        return forb;
+    }
+
+    private static boolean inBounds(Position position, int width, int height) {
+        return position.getX() >= 0 && position.getX() < width && position.getY() >= 0 && position.getY() < height;
+    }
+
+    private static String key(Position a, Position b) {
+        return a.getX() + "," + a.getY() + "|" + b.getX() + "," + b.getY();
     }
 
     private static void patchCenterDirections(Grid grid, int x, int y) {
@@ -145,6 +272,13 @@ public class RoadLayoutGenerator {
             }
         }
         return seen;
+    }
+
+    private static <T> List<T> union(List<T> a, List<T> b) {
+        List<T> outerList = new ArrayList<>(a.size() + b.size());
+        outerList.addAll(a);
+        outerList.addAll(b);
+        return outerList;
     }
 
 }
