@@ -14,6 +14,22 @@ import core.Position;
 
 public class RoadLayoutGenerator {
 
+    public RoadLayout buildDeterministic(Grid grid, int width, int height,
+            int nVertical, int nHorizontal,
+            int spacing, long seed,
+            boolean randomizedPositions) {
+        Random rnd = new Random(seed);
+        List<Integer> vBases = selectBases(1, Math.max(1, width - 2), Math.max(1, nVertical), Math.max(1, spacing),
+                randomizedPositions, rnd);
+        List<Integer> hBases = selectBases(1, Math.max(1, height - 2), Math.max(1, nHorizontal), Math.max(1, spacing),
+                randomizedPositions, rnd);
+        if (vBases.isEmpty())
+            vBases = List.of(Math.max(1, (width - 2) / 2));
+        if (hBases.isEmpty())
+            hBases = List.of(Math.max(1, (height - 2) / 2));
+        return buildLayout(grid, width, height, vBases, hBases, rnd);
+    }
+
     public RoadLayout build(Grid grid, SimulationEnvironmentParams params) {
         return params.getGenerationType() == SimulationEnvironmentParams.GenerationType.DETERMINISTIC
                 ? buildDeterministicLayout(grid, params)
