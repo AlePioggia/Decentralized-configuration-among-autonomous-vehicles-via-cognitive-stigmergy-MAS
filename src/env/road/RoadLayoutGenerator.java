@@ -21,11 +21,106 @@ public class RoadLayoutGenerator {
     }
 
     private RoadLayout buildDeterministicLayout(Grid grid, SimulationEnvironmentParams params) {
-        return null;
+        int width = params.getWidth();
+        int height = params.getHeight();
+        int spacing = Math.max(1, params.getMinSpacingBetweenRoads());
+        int nVertical = Math.max(1, params.getVerticalRoadsNumber());
+        int nHorizontal = Math.max(1, params.getHorizontalRoadsNumber());
+        boolean randomizedPositions = params.isRandomizedPositions();
+        Random random = new Random(params.getSeed());
+
+        List<Integer> vBases = selectBases(1, Math.max(1, width - 2), nVertical, spacing, randomizedPositions,
+                random);
+        List<Integer> hBases = selectBases(spacing, Math.max(1, height - 2), nHorizontal, spacing, randomizedPositions,
+                random);
+
+        if (vBases.isEmpty())
+            vBases = List.of(Math.max(1, (width - 2) / 2));
+        if (hBases.isEmpty())
+            hBases = List.of(Math.max(1, (height - 2) / 2));
+
+        return buildLayout(grid, width, height, vBases, hBases, random);
     }
 
     private RoadLayout buildRandomizedLayout(Grid grid, SimulationEnvironmentParams params) {
-        return null;
+        int width = params.getWidth();
+        int height = params.getHeight();
+        int spacing = Math.max(1, params.getMinSpacingBetweenRoads());
+        Random rnd = new Random(params.getSeed());
+
+        int nVertical = 1 + rnd.nextInt(Math.max(1, params.getMaxVerticalRoadsNumber()));
+        int nHorizontal = 1 + rnd.nextInt(Math.max(1, params.getMaxHorizontalRoadsNumber()));
+        boolean randomizedPositions = params.isRandomizedPositions();
+
+        List<Integer> vBases = selectBases(1, Math.max(1, width - 2), nVertical, spacing, randomizedPositions, rnd);
+        List<Integer> hBases = selectBases(1, Math.max(1, height - 2), nHorizontal, spacing, randomizedPositions, rnd);
+
+        if (vBases.isEmpty())
+            vBases = List.of(Math.max(1, (width - 2) / 2));
+        if (hBases.isEmpty())
+            hBases = List.of(Math.max(1, (height - 2) / 2));
+
+        return buildLayout(grid, width, height, vBases, hBases, rnd);
+    }
+
+    private RoadLayout buildLayout(Grid grid, int width, int heigh, List<Integer> verticalBases,
+            List<Integer> horizontalBases, Random random) {
+        List<Road> roads = new ArrayList<>();
+        RoadFactory roadFactory = new BasicRoadFactoryImpl();
+
+        for (int x : verticalBases) {
+            Road verticalRoad = roadFactory.createVerticalRoad(x, x + 1, 0, heigh);
+            roads.add(verticalRoad);
+            IntStream.range(0, heigh).forEach(y -> {
+                grid.getCell(x, y).setDirection("North");
+                grid.getCell(x + 1, y).setDirection("South");
+            });
+        }
+
+        for (int y : horizontalBases) {
+            Road horizontalRoad = roadFactory.createHorizontalRoad(0, width, y, y + 1);
+            roads.add(horizontalRoad);
+            IntStream.range(0, width).forEach(x -> {
+                grid.getCell(x, y).setDirection("West");
+                grid.getCell(x, y + 1).setDirection("East");
+            });
+        }
+
+        Set<Set<Position>> footprints = new LinkedHashSet<>();
+        for (int x : verticalBases) {
+            for (int y : horizontalBases) {
+                Set<Position> footprint = new LinkedHashSet<>();
+                footprint.addAll(List.of(new Position(x, y), new Position(x + 1, y), new Position(x, y + 1),
+                        new Position(x + 1, y + 1)));
+                footprints.add(footprint);
+                patchCenterDirections(grid, x, y);
+            }
+        }
+
+        int minDistFromIntersections = 2;
+        Set<Position[]> standaloneTurns = generateStandaloneTurns(grid, width, heigh, verticalBases, horizontalBases,
+                footprints, minDistFromIntersections, random, roads);
+
+        if (!areRoadsAllConnected(grid)) {
+            int cy = Math.max(1, (heigh - 2) / 2);
+            roads.add(roadFactory.createHorizontalRoad(0, width, cy, cy + 1));
+            IntStream.range(0, width).forEach(x -> {
+                grid.getCell(x, cy).setDirection("West");
+                grid.getCell(x, cy + 1).setDirection("East");
+            });
+            for (int x : verticalBases) {
+                Set<Position> footprint = new LinkedHashSet<>();
+                footprint.addAll(List.of(new Position(x, 0), new Position(x + 1, 0), new Position(x, 1),
+                        new Position(x + 1, 1)));
+                if (footprints.add(footprint)) {
+                    patchCenterDirections(grid, x, cy);
+                }
+            }
+            standaloneTurns = generateStandaloneTurns(grid, width, heigh, verticalBases, horizontalBases, footprints,
+                    minDistFromIntersections, random, roads);
+        }
+
+        return new RoadLayout(roads, footprints, null, standaloneTurns);
     }
 
     private Set<Position[]> generateStandaloneTurns(Grid grid, int width, int height,
