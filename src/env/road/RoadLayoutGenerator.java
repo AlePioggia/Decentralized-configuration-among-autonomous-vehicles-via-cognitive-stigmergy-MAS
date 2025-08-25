@@ -14,7 +14,7 @@ import core.Position;
 
 public class RoadLayoutGenerator {
 
-    private RoadLayout build(Grid grid, SimulationEnvironmentParams params) {
+    public RoadLayout build(Grid grid, SimulationEnvironmentParams params) {
         return params.getGenerationType() == SimulationEnvironmentParams.GenerationType.DETERMINISTIC
                 ? buildDeterministicLayout(grid, params)
                 : buildRandomizedLayout(grid, params);
