@@ -35,4 +35,10 @@ public class RoadLayout {
         return this.turns;
     }
 
+    @Override
+    public String toString() {
+        return "RoadLayout [roads=" + roads + ", intersectionFootprints=" + intersectionFootprints
+                + ", trafficLightPositions=" + trafficLightPositions + ", turns=" + turns + "]\n";
+    }
+
 }

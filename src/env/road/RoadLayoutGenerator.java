@@ -85,7 +85,7 @@ public class RoadLayoutGenerator {
         RoadFactory roadFactory = new BasicRoadFactoryImpl();
 
         for (int x : verticalBases) {
-            Road verticalRoad = roadFactory.createVerticalRoad(x, x + 1, 0, heigh);
+            Road verticalRoad = roadFactory.createVerticalRoadFromTo(x, x + 1, 0, heigh);
             roads.add(verticalRoad);
             IntStream.range(0, heigh).forEach(y -> {
                 grid.getCell(x, y).setDirection("North");
@@ -94,7 +94,7 @@ public class RoadLayoutGenerator {
         }
 
         for (int y : horizontalBases) {
-            Road horizontalRoad = roadFactory.createHorizontalRoad(0, width, y, y + 1);
+            Road horizontalRoad = roadFactory.createHorizontalRoadFromTo(0, width, y, y + 1);
             roads.add(horizontalRoad);
             IntStream.range(0, width).forEach(x -> {
                 grid.getCell(x, y).setDirection("West");
@@ -119,7 +119,7 @@ public class RoadLayoutGenerator {
 
         if (!areRoadsAllConnected(grid)) {
             int cy = Math.max(1, (heigh - 2) / 2);
-            roads.add(roadFactory.createHorizontalRoad(0, width, cy, cy + 1));
+            roads.add(roadFactory.createHorizontalRoadFromTo(0, width, cy, cy + 1));
             IntStream.range(0, width).forEach(x -> {
                 grid.getCell(x, cy).setDirection("West");
                 grid.getCell(x, cy + 1).setDirection("East");
@@ -220,7 +220,7 @@ public class RoadLayoutGenerator {
             grid.getCell(x, y1).setDirection("West");
             grid.getCell(x, y2).setDirection("East");
         });
-        return roadFactory.createHorizontalRoad(startX, endX + 1, y1, y2);
+        return roadFactory.createHorizontalRoadFromTo(startX, endX + 1, y1, y2);
     }
 
     private Road createVerticalTurn(Grid grid, int startY, int endY, int x1, int x2) {
@@ -232,7 +232,7 @@ public class RoadLayoutGenerator {
             grid.getCell(x1, y).setDirection("North");
             grid.getCell(x2, y).setDirection("South");
         });
-        return roadFactory.createVerticalRoad(x1, x2, startY, endY + 1);
+        return roadFactory.createVerticalRoadFromTo(x1, x2, startY, endY + 1);
     }
 
     private static Set<Position> expandForbidden(Set<Position> seeds, int width, int height, int minDist) {
