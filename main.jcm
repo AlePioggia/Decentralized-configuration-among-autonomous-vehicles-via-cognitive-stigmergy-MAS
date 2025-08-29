@@ -9,22 +9,32 @@
     JaCaMo 1.2
 */
 
+// mas main {
+
+//   agent vehicle1: probabilistic_vehicle/complete_vehicle.asl {
+//     beliefs: name("vehicle1")
+//     focus: w.trafficEnv, w.light1, w.light2
+//   }
+
+//   agent vehicle2: probabilistic_vehicle/complete_vehicle.asl {
+//     beliefs: name("vehicle2")
+//     focus: w.trafficEnv, w.light1, w.light2
+//   }
+
+//   workspace w {
+//     artifact trafficEnv: traffic.TrafficEnvironment()
+//     artifact light1: traffic.TrafficLight(2, 1)
+//     artifact light2: traffic.TrafficLight(2, 2)
+//   }
+
+// }
 mas main {
-
-  agent vehicle1: probabilistic_vehicle/complete_vehicle.asl {
-    beliefs: name("vehicle1")
-    focus: w.trafficEnv, w.light1, w.light2
-  }
-
-  agent vehicle2: probabilistic_vehicle/complete_vehicle.asl {
-    beliefs: name("vehicle2")
-    focus: w.trafficEnv, w.light1, w.light2
+  agent spawner: probabilistic_vehicle/modules/spawner.asl {
+    beliefs: name("spawner")
+    focus: w.trafficEnv
   }
 
   workspace w {
     artifact trafficEnv: traffic.TrafficEnvironment()
-    artifact light1: traffic.TrafficLight(2, 1)
-    artifact light2: traffic.TrafficLight(2, 2)
   }
-
 }
