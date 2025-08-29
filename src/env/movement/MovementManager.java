@@ -77,7 +77,7 @@ public class MovementManager {
                         : null;
             } else if ("follow".equals(action)) {
                 Cell cell = grid.getCell(current.getX(), current.getY());
-                intendedDestination = computeNextPosition(cell);
+                intendedDestination = Utils.computeNextPosition(cell);
             }
             if (intendedDestination != null && !intendedDestination.equals(current)) {
                 agentIntentions.put(agentId, intendedDestination);
@@ -91,24 +91,6 @@ public class MovementManager {
                 .stream()
                 .noneMatch(entry -> !entry.getKey().equals(agentId) && entry.getValue().equals(position))
                 && !grid.getCell(position.getX(), position.getY()).isOccupied();
-    }
-
-    private Position computeNextPosition(Cell cell) {
-        int x = cell.getPosition().getX();
-        int y = cell.getPosition().getY();
-
-        switch (cell.getDirection()) {
-            case "North":
-                return new Position(x, y - 1);
-            case "South":
-                return new Position(x, y + 1);
-            case "East":
-                return new Position(x + 1, y);
-            case "West":
-                return new Position(x - 1, y);
-            default:
-                return cell.getPosition();
-        }
     }
 
     public List<Road> getRoads() {
