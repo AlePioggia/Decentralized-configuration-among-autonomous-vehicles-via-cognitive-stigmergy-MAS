@@ -5,6 +5,18 @@
 { include("src/agt/probabilistic_vehicle/modules/coordination.asl") }
 { include("src/agt/probabilistic_vehicle/modules/intersection_discovery.asl") }
 
++name(N)[source(ml)] <-
+    +get_name(N);
+    .print("[init-msg] id=", N).
+
++env_ready : get_name(ME) <-  
+    .print("[init] received env_ready, joining workspace");
+    joinWorkspace("/main/w");
+    .wait(1000); 
+    !start.  
+
+get_name(ME) :- name(ME).
+
 +!choose_action : get_name(ME) & not at(ME, _, _) <-
     .wait(200);
     !choose_action.
@@ -21,11 +33,16 @@
     .print("[step]");
     !loop.
 
-!start.
-
-+!start : get_name(ME) <-
++!start : get_name(ME) & env_ready <-
+    lookupArtifact("trafficEnv", EnvId);
+    focus(EnvId);
     .print("[start]");
     !choose_action.
+
++!start[error(action_failed)] : get_name(ME) & env_ready <-
+    .print("[start] trafficEnv not available, retrying...");
+    .wait(500);
+    !start.
 
 +!start <- 
     .print("[wait_name]");
