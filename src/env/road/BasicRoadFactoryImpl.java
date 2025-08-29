@@ -36,4 +36,28 @@ public class BasicRoadFactoryImpl implements RoadFactory {
 
         return new Road("roadName", mainLane, secondLane);
     }
+
+    public Road createHorizontalRoadFromTo(int startX, int endX, int y1, int y2) {
+        List<Cell> mainLane = new ArrayList<>();
+        List<Cell> secondLane = new ArrayList<>();
+
+        IntStream.range(startX, endX).forEach(i -> {
+            mainLane.add(new Cell(i, y1, "West"));
+            secondLane.add(new Cell(i, y2, "East"));
+        });
+
+        return new Road("roadName", mainLane, secondLane);
+    }
+
+    public Road createVerticalRoadFromTo(int x1, int x2, int startY, int endY) {
+        List<Cell> mainLane = new ArrayList<>();
+        List<Cell> secondLane = new ArrayList<>();
+
+        IntStream.range(startY, endY).forEach(i -> {
+            mainLane.add(new Cell(x1, i, "North"));
+            secondLane.add(new Cell(x2, i, "South"));
+        });
+
+        return new Road("roadName", mainLane, secondLane);
+    }
 }
