@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 
@@ -33,6 +34,8 @@ import perception.PerceptionObserver;
 import road.BasicRoadFactoryImpl;
 import road.Road;
 import road.RoadFactory;
+import road.RoadLayout;
+import road.RoadLayoutGenerator;
 import core.Utils;
 
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener, IntersectionDiscoveryListener {
@@ -59,17 +62,28 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void initializeData() {
-        this.grid = new Grid(20, 20);
+        int[] size = parseGridProp(System.getProperty("sim.grid"), 20, 20);
+        this.grid = new Grid(size[0], size[1]);
         this.agentActions = new HashMap<>();
         this.agentPositions = new HashMap<>();
         this.roads = new ArrayList<>();
     }
 
+    private int[] parseGridProp(String s, int defW, int defH) {
+        try {
+            if (s == null)
+                return new int[] { defW, defH };
+            String[] parts = s.toLowerCase().split("x");
+            int w = Integer.parseInt(parts[0].trim());
+            int h = Integer.parseInt(parts[1].trim());
+            return new int[] { w, h };
+        } catch (Exception e) {
+            return new int[] { defW, defH };
+        }
+    }
+
     private void initializeServices() {
         this.movementManager = new MovementManager(grid, agentPositions, roads);
-        List<Turn> availableTurns = setupAvailableTurns();
-        this.turnDiscoveryService = new TurnDiscoveryService(availableTurns);
-        this.turnDiscoveryService.addListener(this);
 
         PerceptionObserver.PerceptionCallback callback = new PerceptionObserver.PerceptionCallback() {
             @Override
@@ -88,16 +102,78 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.perceptionObserver = new PerceptionObserver(callback);
 
         ActionHandlerFactory.registerHandler("follow", new FollowActionHandler());
-        ActionHandlerFactory.registerHandler("turn", new TurnActionHandler(turnDiscoveryService));
+        // ActionHandlerFactory.registerHandler("turn", new
+        // TurnActionHandler(turnDiscoveryService));
         ActionHandlerFactory.registerHandler("wait", new DefaultActionHandler());
         ActionHandlerFactory.registerHandler("default", new DefaultActionHandler());
     }
 
     private void setupEnvironment() {
-        setupRoads();
-        setupIntersections();
-        spawnAgents();
+        boolean dynamic = Boolean.parseBoolean(System.getProperty("sym.dynamic", "true"));
+
+        if (dynamic) {
+            System.out.println("Started Dynamic setting: ");
+            setupEnvironmentDynamicFromProps();
+        } else {
+            setupRoads();
+            setupIntersections();
+            spawnAgents();
+        }
         updatePerceptions();
+    }
+
+    private void setupEnvironmentDynamicFromProps() {
+        int vroads = getIntProp("sim.vroads", 2);
+        int hroads = getIntProp("sim.hroads", 2);
+        int spacing = getIntProp("sim.spacing", 3);
+        long seed = getLongProp("sim.seed", 12345L);
+        boolean randpos = Boolean.getBoolean("sim.randpos");
+
+        RoadLayoutGenerator gen = new RoadLayoutGenerator();
+        RoadLayout layout = gen.buildDeterministic(
+                grid, grid.getWidth(), grid.getHeight(),
+                vroads, hroads, spacing, seed, randpos);
+
+        System.out.println("ROAD LAYOUT GENERATION: ");
+
+        this.roads.clear();
+        this.roads.addAll(layout.getRoads());
+        this.roads.forEach(r -> r.getLines().forEach(cell -> this.grid.setCell(cell)));
+
+        IntersectionPlanner planner = new IntersectionPlanner(this.grid, this.roads);
+        this.movementManager.setIntersectionPlanner(planner);
+
+        List<Intersection> intersections = layout.getIntersectionFootprints()
+                .stream()
+                .map(Intersection::new)
+                .toList();
+        this.intersectionDiscoveryService = new IntersectionDiscoveryService(intersections);
+        this.intersectionDiscoveryService.addListener(this);
+        ActionHandlerFactory.registerHandler("intersection",
+                new IntersectionActionHandler(planner, intersectionDiscoveryService));
+
+        List<Turn> turns = layout.getTurns().stream()
+                .map(p -> new Turn(p[0], p[1]))
+                .toList();
+        this.turnDiscoveryService = new TurnDiscoveryService(turns);
+        this.turnDiscoveryService.addListener(this);
+        ActionHandlerFactory.registerHandler("turn", new TurnActionHandler(turnDiscoveryService));
+    }
+
+    private int getIntProp(String key, int def) {
+        try {
+            return Integer.parseInt(System.getProperty(key, Integer.toString(def)));
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private long getLongProp(String key, long def) {
+        try {
+            return Long.parseLong(System.getProperty(key, Long.toString(def)));
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     private void setupIntersections() {
@@ -138,11 +214,66 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     @OPERATION
+    public void getSimAgents(OpFeedbackParam<Integer> n) {
+        n.set(getIntProp("sim.agents", 2));
+    }
+
+    @OPERATION
+    public void getSimSeed(OpFeedbackParam<Long> seed) {
+        seed.set(getLongProp("sim.seed", System.currentTimeMillis()));
+    }
+
+    @OPERATION
     void writeIntent(String agent, String action) {
         synchronized (agentActions) {
             this.agentActions.put(agent, action);
         }
         updateIntentions();
+    }
+
+    @OPERATION
+    public void pickRandomFreeRoadCell(long seed, OpFeedbackParam<Integer> x, OpFeedbackParam<Integer> y) {
+        List<Position> free = collectFreeRoadCells();
+        if (free.isEmpty()) {
+            x.set(-1);
+            y.set(-1);
+            return;
+        }
+        Random random = new Random(seed ^ System.nanoTime());
+        Position position = free.get(random.nextInt(free.size()));
+        x.set(position.getX());
+        y.set(position.getY());
+    }
+
+    @OPERATION
+    public void placeAgent(String agentId, int x, int y, OpFeedbackParam<Boolean> result) {
+        Position position = new Position(x, y);
+        Cell cell = grid.getCell(x, y);
+        if (cell != null && cell.getDirection() != null && !cell.isOccupied() && isInsideAnyRoad(position)) {
+            cell.setOccupied(true);
+            this.agentPositions.put(agentId, position);
+            result.set(true);
+        } else {
+            result.set(false);
+        }
+    }
+
+    private List<Position> collectFreeRoadCells() {
+        List<Position> freeRoadCells = new ArrayList<>();
+        int width = this.grid.getWidth();
+        int height = this.grid.getHeight();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Cell cell = grid.getCell(x, y);
+                if (cell != null && !cell.isOccupied()
+                        && isInsideAnyRoad(new Position(x, y)) && cell.getDirection() != null) {
+                    freeRoadCells.add(new Position(x, y));
+                }
+            }
+        }
+
+        return freeRoadCells;
     }
 
     @INTERNAL_OPERATION
@@ -232,7 +363,6 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private void spawnAgents() {
         spawnAgent("vehicle1", new Position(0, 1));
-        // spawnAgent("vehicle2", new Position(4, 0));
         spawnAgent("vehicle2", new Position(4, 6));
     }
 
@@ -330,4 +460,5 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     public void hasTrafficLightAt(int x, int y, OpFeedbackParam<Boolean> result) {
         result.set(false);
     }
+
 }
