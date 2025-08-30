@@ -64,6 +64,8 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private void initializeData() {
         int[] size = parseGridProp(System.getProperty("sim.grid"), 20, 20);
         this.grid = new Grid(size[0], size[1]);
+        defineObsProperty("grid_width", grid.getWidth());
+        defineObsProperty("grid_height", grid.getHeight());
         this.agentActions = new HashMap<>();
         this.agentPositions = new HashMap<>();
         this.roads = new ArrayList<>();
@@ -200,6 +202,12 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private void startSimulation() {
         setupTimer();
+    }
+
+    @OPERATION
+    public void publishGridSize() {
+        defineObsProperty("grid_width", grid.getWidth());
+        defineObsProperty("grid_height", grid.getHeight());
     }
 
     @OPERATION
@@ -436,7 +444,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
             return (planner != null) ? planner.computeNext(currentPosition, action) : null;
         } else {
             Cell cell = grid.getCell(currentPosition.getX(), currentPosition.getY());
-            return Utils.computeNextPosition(cell);
+            return Utils.computeNextPosition(cell, grid);
         }
     }
 

@@ -77,7 +77,7 @@ public class MovementManager {
                         : null;
             } else if ("follow".equals(action)) {
                 Cell cell = grid.getCell(current.getX(), current.getY());
-                intendedDestination = Utils.computeNextPosition(cell);
+                intendedDestination = Utils.computeNextPosition(cell, grid);
             }
             if (intendedDestination != null && !intendedDestination.equals(current)) {
                 agentIntentions.put(agentId, intendedDestination);

@@ -12,6 +12,7 @@
 +env_ready : get_name(ME) <-  
     .print("[init] received env_ready, joining workspace");
     joinWorkspace("/main/w");
+    publishGridSize;
     .wait(1000); 
     !start.  
 

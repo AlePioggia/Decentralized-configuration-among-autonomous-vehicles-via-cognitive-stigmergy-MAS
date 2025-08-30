@@ -10,7 +10,7 @@ public class FollowActionHandler implements ActionHandler {
         Position currentPosition = movementManager.getCurrentPosition(agent);
         Cell currentCell = movementManager.getGrid().getCell(currentPosition.getX(), currentPosition.getY());
 
-        Position nextPosition = Utils.computeNextPosition(currentCell);
+        Position nextPosition = Utils.computeNextPosition(currentCell, movementManager.getGrid());
 
         if (Utils.isValidPosition(nextPosition, movementManager.getGrid(), movementManager.getRoads())
                 && movementManager.isIntendedPositionFree(agent, nextPosition)) {
