@@ -1,12 +1,17 @@
 package perception;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
+import cartago.ObsProperty;
 import core.Cell;
 import core.Grid;
 import core.Position;
 import discovery.Intersection;
 import discovery.Turn;
+import jason.asSyntax.ListTermImpl;
+import jason.asSyntax.NumberTermImpl;
 
 public class PerceptionObserver {
 
@@ -14,6 +19,10 @@ public class PerceptionObserver {
         void defineObsProperty(String property, Object... args);
 
         void removeObsPropertyByTemplate(String property, Object... args);
+
+        ObsProperty getObsProperty(String property);
+
+        void updateObsProperty(String property, Object... args);
     }
 
     private final PerceptionCallback callback;
@@ -24,6 +33,10 @@ public class PerceptionObserver {
 
     public void updateAgentPositions(Map<String, Position> agentPosition, Grid grid) {
         clearProperties();
+
+        List<Object[]> occList = updateOccupantsProperty(grid);
+
+        System.out.println("[JAVA] occupants: " + Arrays.deepToString(occList.toArray()));
 
         for (Map.Entry<String, Position> entry : agentPosition.entrySet()) {
             String agentId = entry.getKey();
@@ -37,6 +50,28 @@ public class PerceptionObserver {
                 callback.defineObsProperty("direction", position.getX(), position.getY(), cell.getDirection());
             }
         }
+    }
+
+    private List<Object[]> updateOccupantsProperty(Grid grid) {
+        List<Object[]> occList = grid.getOccupiedCells();
+
+        ListTermImpl occListTerm = new ListTermImpl();
+
+        for (Object[] pos : grid.getOccupiedCells()) {
+            int x = (int) pos[0];
+            int y = (int) pos[1];
+            ListTermImpl cell = new ListTermImpl();
+            cell.add(new NumberTermImpl(x));
+            cell.add(new NumberTermImpl(y));
+            occListTerm.add(cell);
+        }
+
+        try {
+            callback.updateObsProperty("occupants", occListTerm);
+        } catch (Exception e) {
+            callback.defineObsProperty("occupants", occListTerm);
+        }
+        return occList;
     }
 
     public void notifyTurnAvailable(Turn turn) {

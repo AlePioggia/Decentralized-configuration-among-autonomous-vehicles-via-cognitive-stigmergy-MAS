@@ -1,5 +1,7 @@
 package core;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class Grid {
@@ -31,6 +33,18 @@ public class Grid {
 
     public void setCell(Cell cell) {
         this.cells[cell.getPosition().getX()][cell.getPosition().getY()] = cell;
+    }
+
+    public List<Object[]> getOccupiedCells() {
+        List<Object[]> occupants = new ArrayList<>();
+        for (Cell[] row : cells) {
+            for (Cell cell : row) {
+                if (cell.isOccupied()) {
+                    occupants.add(new Object[] { cell.getPosition().getX(), cell.getPosition().getY() });
+                }
+            }
+        }
+        return occupants;
     }
 
     public int getWidth() {

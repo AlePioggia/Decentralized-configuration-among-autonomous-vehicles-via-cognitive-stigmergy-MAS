@@ -12,6 +12,7 @@ import java.util.Timer;
 import cartago.Artifact;
 import cartago.INTERNAL_OPERATION;
 import cartago.OPERATION;
+import cartago.ObsProperty;
 import cartago.OpFeedbackParam;
 import core.Cell;
 import core.Grid;
@@ -99,6 +100,16 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
                     TrafficEnvironment.this.removeObsPropertyByTemplate(property, args);
                 } catch (Exception e) {
                 }
+            }
+
+            @Override
+            public ObsProperty getObsProperty(String property) {
+                return TrafficEnvironment.this.getObsProperty(property);
+            }
+
+            @Override
+            public void updateObsProperty(String property, Object... args) {
+                TrafficEnvironment.this.updateObsProperty(property, args);
             }
         };
         this.perceptionObserver = new PerceptionObserver(callback);
@@ -304,6 +315,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
                 executeActions(actionsCopy);
             }
 
+            System.out.println("[JAVA] update perceptions");
             updatePerceptions();
             signal("step_completed");
 

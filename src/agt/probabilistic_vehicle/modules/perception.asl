@@ -6,6 +6,10 @@
     -occupied(X, Y);
     +occupied(X, Y).
 
++occupants(List)[source(percept)] <-
+    -occupants(_);
+    +occupants(List).
+
 +direction(X, Y, Direction)[source(percept)] <- 
     -direction(X, Y, _);
     +direction(X, Y, Direction).

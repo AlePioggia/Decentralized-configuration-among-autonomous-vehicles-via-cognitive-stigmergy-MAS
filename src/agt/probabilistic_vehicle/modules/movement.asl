@@ -28,7 +28,9 @@
     ?next_position(X, Y, Dir, NextX, NextY).
 
 +!execute_move(NextX, NextY) : get_name(ME) <-
-    if (not occupied(NextX, NextY)) {
+    ?occupants(List);
+    .print("[DEBUG][Jason] occupants: ", List);
+    if (not .member([NextX, NextY], List)) {
         writeIntent(ME, "follow");
     } else {
         .print("[wait] Cell (", NextX, ",", NextY, ") occupied, waiting");
