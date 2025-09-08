@@ -10,9 +10,10 @@ import java.util.Timer;
 public class UtilsTest {
     @Test
     public void testComputeNextPosition() {
+        Grid grid = new Grid(5, 5);
         Cell current = new Cell(0, 0, "East");
         Position expectedPosition = new Position(1, 0);
-        Position actualPosition = Utils.computeNextPosition(current);
+        Position actualPosition = Utils.computeNextPosition(current, grid);
         assertEquals(expectedPosition, actualPosition);
     }
 
