@@ -12,6 +12,12 @@
 +env_ready : get_name(ME) <-  
     .print("[init] received env_ready, joining workspace");
     joinWorkspace("/main/w");
+    lookupArtifact("trafficEnv", EnvId);
+    focus(EnvId);
+    lookupArtifact("light1", Light1Id);
+    focus(Light1Id);
+    lookupArtifact("light2", Light2Id);
+    focus(Light2Id);
     publishGridSize;
     .wait(1000); 
     !start.  
