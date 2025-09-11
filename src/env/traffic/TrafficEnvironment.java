@@ -52,7 +52,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private List<Road> roads;
 
     private Timer timer;
-    private int interval = 1000;
+    private int interval = 5000;
     private boolean running = false;
 
     public void init() {

@@ -9,7 +9,7 @@ import core.Utils;
 
 public class TrafficLight extends Artifact {
 
-    private static final int LIGHT_DURATION = 2000;
+    private static final int LIGHT_DURATION = 5000;
     private boolean isGreenLight;
     private Position position;
     private Timer timer;

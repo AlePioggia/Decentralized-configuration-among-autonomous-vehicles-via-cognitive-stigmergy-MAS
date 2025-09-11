@@ -57,7 +57,7 @@ get_name(ME) :- name(ME).
     !start.
 
 +!loop : get_name(ME) <- 
-    .wait(200);
+    .wait(3000);
     !choose_action.
 
 +!choose_action : get_name(ME) & at(ME, X, Y) & direction(X, Y, Direction) <- 
