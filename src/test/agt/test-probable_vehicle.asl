@@ -103,3 +103,34 @@
     -known_turn(_, _, _, _);
     -get_name("test");
     -test_action(_, _).
+
+@[test]
++!test_perception_update <-
+    +at("agent", 2, 3)[source(percept)];
+    +occupied(2, 3)[source(percept)];
+    !assert_belief_exists(at("agent", 2, 3));
+    !assert_belief_exists(occupied(2, 3)).
+
+@[test]
++!test_traffic_light_percept <-
+    +light_state(2, 1, "green")[source(percept)];
+    !assert_belief_exists(light_current_state(2, 1, "green"));
+    .print("Traffic light percept test passed.").
+
+@[test]
++!test_traffic_light_changed <-
+    +light_state_changed(2, 1, "red")[source(percept)];
+    !assert_belief_exists(light_current_state(2, 1, "red"));
+    .print("Traffic light changed test passed.").
+
+@[test]
++!test_intersection_discovery <-
+    +intersection_available(4, 4)[source(percept)];
+    !assert_belief_exists(known_intersection(4, 4));
+    .print("Intersection discovery test passed.").
+
+@[test]
++!test_agent_position_update <-
+    +at("vehicle1", 1, 1)[source(percept)];
+    !assert_belief_exists(at("vehicle1", 1, 1));
+    .print("Agent position update test passed.").

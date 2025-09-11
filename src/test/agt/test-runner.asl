@@ -9,7 +9,12 @@
     !test_next_position_east;
     !test_next_position_west;
     !test_execute_move_mock;
-    // !test_turn;
+    !test_perception_update;
+    !test_traffic_light_percept;
+    !test_traffic_light_changed;
+    !test_turn;
+    !test_intersection_discovery;
+    !test_agent_position_update;
     .wait(2000);
     .print(" completed tests ");
     .stopMAS.
