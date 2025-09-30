@@ -5,6 +5,10 @@
 { include("src/agt/probabilistic_vehicle/modules/coordination.asl") }
 { include("src/agt/probabilistic_vehicle/modules/intersection_discovery.asl") }
 
++at(ME, GX, GY) : goal(GX, GY) & not goal_reached(ME) <-
+    +goal_reached(ME);
+    .print("[goal-reached] ", ME, " (", GX, ",", GY, ")").
+
 +name(N)[source(ml)] <-
     +get_name(N);
     .print("[init-msg] id=", N).
@@ -19,6 +23,9 @@
     lookupArtifact("light2", Light2Id);
     focus(Light2Id);
     publishGridSize;
+    assignGoal(GX, GY);
+    .print("[goal] assigned to=(", GX, ",", GY, ")");
+    +goal(GX, GY);
     .wait(1000); 
     !start.  
 
@@ -60,6 +67,9 @@ get_name(ME) :- name(ME).
     .wait(3000);
     !choose_action.
 
++!loop : get_name(ME) & goal_reached(ME) <-
+    .print("[stop] ", ME, " simulation has been stopped").
+
 +!choose_action : get_name(ME) & at(ME, X, Y) & direction(X, Y, Direction) <- 
     .print("[choose] pos=(", X, ",", Y, ") dir=", Direction);
     explore(ME, X, Y, Direction);
@@ -70,7 +80,7 @@ get_name(ME) :- name(ME).
     
     if (has_available_intersections(X, Y)) {
         .print("[intersection] seen pos=(", X, ",", Y, ")");
-        !decide_intersection_or_straight(X, Y, Direction);
+        !decide_intersection_or_straight_goal_oriented(X, Y, Direction);
     } else {
         if (AvailableTurns \== []) {
             .print("[turns] available=", AvailableTurns);
@@ -105,6 +115,11 @@ get_name(ME) :- name(ME).
         .print("[decision] straight (r=", RandomValue, " >= p=", TurnProbability, ")");
         !proceed_straight(X, Y, Direction);
     }.
+
++!decide_intersection_or_straight_goal_oriented(X, Y, Direction) : get_name(ME) & goal(GX, GY) <-
+    getBestIntersectionDirection(X, Y, GX, GY, Target);
+    .print("[intersection-goal] target=", Target);
+    !execute_intersection(Target).
 
 +!decide_intersection_or_straight(X, Y, Direction) : get_name(ME) <-
     .random(R);

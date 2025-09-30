@@ -31,12 +31,15 @@ public class PerceptionObserver {
         this.callback = callback;
     }
 
-    public void updateAgentPositions(Map<String, Position> agentPosition, Grid grid) {
+    public void updateAgentPositions(Map<String, Position> agentPosition, Map<String, Position> agentIntentions,
+            Grid grid) {
         clearProperties();
 
         List<Object[]> occList = updateOccupantsProperty(grid);
 
         System.out.println("[JAVA] occupants: " + Arrays.deepToString(occList.toArray()));
+
+        updateAgentIntentions(agentIntentions);
 
         for (Map.Entry<String, Position> entry : agentPosition.entrySet()) {
             String agentId = entry.getKey();
@@ -72,6 +75,28 @@ public class PerceptionObserver {
             callback.defineObsProperty("occupants", occListTerm);
         }
         return occList;
+    }
+
+    private void updateAgentIntentions(Map<String, Position> agentIntentions) {
+        try {
+            callback.removeObsPropertyByTemplate("intentions", null, null, null);
+        } catch (Exception e) {
+        }
+
+        ListTermImpl intentListTerm = new ListTermImpl();
+
+        for (Position pos : agentIntentions.values()) {
+            ListTermImpl cell = new ListTermImpl();
+            cell.add(new NumberTermImpl(pos.getX()));
+            cell.add(new NumberTermImpl(pos.getY()));
+            intentListTerm.add(cell);
+        }
+
+        try {
+            callback.updateObsProperty("intentions", intentListTerm);
+        } catch (Exception e) {
+            callback.defineObsProperty("intentions", intentListTerm);
+        }
     }
 
     public void notifyTurnAvailable(Turn turn) {

@@ -48,6 +48,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private Grid grid;
     private Map<String, String> agentActions;
+    private Map<String, Position> agentIntentions;
     private Map<String, Position> agentPositions;
     private List<Road> roads;
 
@@ -60,6 +61,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         initializeServices();
         setupEnvironment();
         startSimulation();
+
     }
 
     private void initializeData() {
@@ -69,6 +71,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         defineObsProperty("grid_height", grid.getHeight());
         this.agentActions = new HashMap<>();
         this.agentPositions = new HashMap<>();
+        this.agentIntentions = new HashMap<>();
         this.roads = new ArrayList<>();
     }
 
@@ -412,12 +415,13 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void updatePerceptions() {
-        perceptionObserver.updateAgentPositions(agentPositions, grid);
+        perceptionObserver.updateAgentPositions(agentPositions, agentIntentions, grid);
     }
 
     private void updateIntentions() {
         try {
             removeObsPropertyByTemplate("agent_intention", null, null, null, null);
+            removeObsPropertyByTemplate("intentions", null, null, null, null);
         } catch (Exception e) {
         }
 
@@ -481,4 +485,81 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         result.set(false);
     }
 
+    @OPERATION
+    public void getBestIntersectionDirection(int x, int y, int goalX, int goalY, OpFeedbackParam<String> direction) {
+        String[] options = new String[] { "straight", "left", "right" };
+        String bestDir = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        Cell currentCell = grid.getCell(x, y);
+        if (currentCell == null || currentCell.getDirection() == null) {
+            direction.set("straight");
+            return;
+        }
+
+        for (String opt : options) {
+            String absDir = new IntersectionPlanner(grid, roads).rotateToRelative(currentCell.getDirection(), opt);
+            int[] offset = getOffsetFor(absDir);
+            if (offset == null)
+                continue;
+
+            int nx = x + offset[0];
+            int ny = y + offset[1];
+
+            Cell nextCell = grid.getCell(nx, ny);
+            if (nextCell == null || nextCell.isOccupied())
+                continue;
+
+            boolean intended = false;
+            synchronized (agentActions) {
+                for (Map.Entry<String, String> entry : agentActions.entrySet()) {
+                    Position pos = agentPositions.get(entry.getKey());
+                    if (pos != null && pos.getX() == nx && pos.getY() == ny) {
+                        intended = true;
+                        break;
+                    }
+                }
+            }
+            if (intended)
+                continue;
+
+            int dist = Math.abs(nx - goalX) + Math.abs(ny - goalY);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestDir = opt;
+            }
+        }
+
+        direction.set(bestDir != null ? bestDir : "straight");
+    }
+
+    private int[] getOffsetFor(String dir) {
+        switch (dir) {
+            case "east":
+                return new int[] { +1, 0 };
+            case "west":
+                return new int[] { -1, 0 };
+            case "south":
+                return new int[] { 0, +1 };
+            case "north":
+                return new int[] { 0, -1 };
+            default:
+                return null;
+        }
+    }
+
+    @OPERATION
+    public void assignGoal(OpFeedbackParam<Integer> gx, OpFeedbackParam<Integer> gy) {
+        var freeCells = collectFreeRoadCells();
+        if (freeCells.isEmpty()) {
+            gx.set(-1);
+            gy.set(-1);
+            return;
+        }
+        Random rand = new Random(System.nanoTime());
+        Position goal = freeCells.get(rand.nextInt(freeCells.size()));
+
+        gx.set(goal.getX());
+        gy.set(goal.getY());
+    }
 }

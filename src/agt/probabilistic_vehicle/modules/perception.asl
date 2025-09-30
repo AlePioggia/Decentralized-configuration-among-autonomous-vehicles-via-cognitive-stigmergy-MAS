@@ -6,6 +6,10 @@
     -occupied(X, Y);
     +occupied(X, Y).
 
++intentions(List)[source(percept)] <-
+    -intentions(_);
+    +intentions(List).
+
 +occupants(List)[source(percept)] <-
     -occupants(_);
     +occupants(List).

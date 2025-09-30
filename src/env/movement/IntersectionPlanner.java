@@ -55,7 +55,7 @@ public class IntersectionPlanner {
         return t.equals("north") || t.equals("south") || t.equals("east") || t.equals("west");
     }
 
-    private String rotateToRelative(String absoluteDirection, String relativeDirection) {
+    public String rotateToRelative(String absoluteDirection, String relativeDirection) {
         switch (absoluteDirection) {
             case "North":
                 return switch (relativeDirection) {

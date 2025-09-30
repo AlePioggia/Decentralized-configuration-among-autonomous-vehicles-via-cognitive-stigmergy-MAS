@@ -29,8 +29,9 @@
 
 +!execute_move(NextX, NextY) : get_name(ME) <-
     ?occupants(List);
+    ?intentions(Intentions);
     .print("[DEBUG][Jason] occupants: ", List);
-    if (not .member([NextX, NextY], List)) {
+    if (not .member([NextX, NextY], List) & not .member([NextX, NextY], Intentions)) {
         writeIntent(ME, "follow");
     } else {
         .print("[wait] Cell (", NextX, ",", NextY, ") occupied, waiting");
