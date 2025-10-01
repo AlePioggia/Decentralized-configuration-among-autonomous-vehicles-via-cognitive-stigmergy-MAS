@@ -20,21 +20,33 @@ public class IntersectionActionHandler implements ActionHandler {
     public MovementResult execute(String agentId, String action, MovementManager movementManager) {
         Position current = movementManager.getCurrentPosition(agentId);
         if (current == null) {
-            return MovementResult.failureResult(agentId, null, null, action);
+            return MovementResult.failureResult(agentId, null, null, action + " (current position is null)");
         }
 
         Intersection requestedIntersection = this.intersectionDiscoveryService.getIntersectionByPosition(current);
-        if (requestedIntersection == null
-                || !this.intersectionDiscoveryService.hasIntersectionBeenDiscovered(requestedIntersection)) {
-            return MovementResult.failureResult(agentId, null, null, action);
+        if (requestedIntersection == null) {
+            return MovementResult.failureResult(agentId, current, null, action + " (not at intersection)");
+        }
+        if (!this.intersectionDiscoveryService.hasIntersectionBeenDiscovered(requestedIntersection)) {
+            return MovementResult.failureResult(agentId, current, null, action + " (intersection not discovered)");
         }
 
         Position destination = this.intersectionPlanner.computeNext(current, action);
-        if (destination == null || !Utils.isValidPosition(destination, movementManager.getGrid(),
-                movementManager.getRoads()) || !movementManager.isIntendedPositionFree(agentId, destination)) {
-            return MovementResult.failureResult(agentId, null, null,
-                    "Couldn't reach destination, it may be occupied or nonexistant");
+        if (destination == null) {
+            return MovementResult.failureResult(agentId, current, null, action + " (destination is null)");
         }
+        if (!Utils.isValidPosition(destination, movementManager.getGrid(), movementManager.getRoads())) {
+            return MovementResult.failureResult(agentId, current, destination,
+                    action + " (destination not a valid road cell)");
+        }
+        // if (!movementManager.isIntendedPositionFree(agentId, destination)) {
+        // System.out.println("[DEBUG] " + agentId + " action=" + action + " from " +
+        // current + ": destination "
+        // + destination + " is occupied or intended.");
+        // return MovementResult.failureResult(agentId, current, destination,
+        // action + " (destination occupied or intended)");
+        // }
+
         movementManager.executeMovement(agentId, current, destination);
         return MovementResult.successResult(agentId, current, destination, action);
     }

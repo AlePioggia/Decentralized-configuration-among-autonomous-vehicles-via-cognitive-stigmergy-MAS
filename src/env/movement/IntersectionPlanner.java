@@ -1,27 +1,41 @@
 package movement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import core.Cell;
 import core.Grid;
 import core.Position;
+import discovery.Intersection;
 import road.Road;
 
 public class IntersectionPlanner {
     private final Grid grid;
     private final List<Road> roads;
+    private final List<Intersection> allFootprints;
 
     public IntersectionPlanner(Grid grid, List<Road> roads) {
         this.grid = grid;
         this.roads = roads;
+        this.allFootprints = new ArrayList<>();
+    }
+
+    public void setFootprints(List<Intersection> footprints) {
+        this.allFootprints.clear();
+        if (footprints != null) {
+            this.allFootprints.addAll(footprints);
+        }
     }
 
     public Position computeNext(Position currentPosition, String action) {
-        if (currentPosition == null || action == null || !action.startsWith("intersection:"))
+        if (currentPosition == null || action == null || !action.startsWith("intersection:")) {
+            System.out.println("[DEBUG][Planner] Invalid input: currentPosition or action is null.");
             return null;
+        }
 
         Cell currentCell = grid.getCell(currentPosition.getX(), currentPosition.getY());
         if (currentCell == null) {
+            System.out.println("[DEBUG][Planner] Current cell is null at " + currentPosition);
             return null;
         }
 
@@ -31,24 +45,41 @@ public class IntersectionPlanner {
 
         int[][] offsets = orderedOffsetsFor(targetDirection);
 
+        System.out.println("[DEBUG][Planner] " + action + " from " + currentPosition + " dir="
+                + currentCell.getDirection() + " -> targetDir=" + targetDirection);
+
         for (int[] off : offsets) {
             int nx = currentPosition.getX() + off[0];
             int ny = currentPosition.getY() + off[1];
             Position cand = new Position(nx, ny);
 
-            if (!core.Utils.isValidPosition(cand, grid, roads))
+            if (!core.Utils.isValidPosition(cand, grid, roads)) {
+                System.out.println("[DEBUG][Planner] Candidate " + cand + " is not a valid position.");
                 continue;
+            }
 
             Cell c = grid.getCell(nx, ny);
-            if (c == null)
+            if (c == null) {
+                System.out.println("[DEBUG][Planner] Candidate " + cand + " cell is null.");
                 continue;
+            }
 
-            if (!targetDirection.equalsIgnoreCase(c.getDirection()))
-                continue;
+            boolean isFootprint = isIntersectionFootprint(c);
+            boolean dirMatch = c.getDirection() != null && targetDirection.equalsIgnoreCase(c.getDirection());
 
-            return cand;
+            System.out.println("[DEBUG][Planner] Checking candidate " + cand + " isFootprint=" + isFootprint + " dir="
+                    + c.getDirection() + " dirMatch=" + dirMatch);
+
+            if (isFootprint || dirMatch)
+                return cand;
         }
+        System.out.println("[DEBUG][Planner] No valid candidate found for " + action + " from " + currentPosition);
         return null;
+    }
+
+    private boolean isIntersectionFootprint(Cell c) {
+        return this.allFootprints.stream()
+                .anyMatch(footprint -> footprint.getFootPrint().contains(c.getPosition()));
     }
 
     private boolean isDirectionAbsolute(String t) {
