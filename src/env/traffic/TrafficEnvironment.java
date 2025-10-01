@@ -1,5 +1,6 @@
 package traffic;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,6 +9,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
+
+import javax.imageio.ImageIO;
 
 import cartago.Artifact;
 import cartago.INTERNAL_OPERATION;
@@ -39,6 +42,11 @@ import road.RoadLayout;
 import road.RoadLayoutGenerator;
 import core.Utils;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.awt.Color;
+import java.awt.Font;
+
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener, IntersectionDiscoveryListener {
 
     private MovementManager movementManager;
@@ -51,6 +59,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Map<String, Position> agentIntentions;
     private Map<String, Position> agentPositions;
     private List<Road> roads;
+    private List<Intersection> allFootprints;
 
     private Timer timer;
     private int interval = 5000;
@@ -61,7 +70,125 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         initializeServices();
         setupEnvironment();
         startSimulation();
+        exportMapAsPNG("traffic_map.png", null);
+    }
 
+    public void exportMapAsPNG(String filename, Position goal) {
+        int cellSize = 40;
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        int margin = 40;
+
+        BufferedImage img = new BufferedImage(width * cellSize + margin, height * cellSize + margin,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, img.getWidth(), img.getHeight());
+
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.PLAIN, 16));
+        for (int x = 0; x < width; x++) {
+            g.drawString(String.valueOf(x), margin + x * cellSize + cellSize / 2 - 8, margin - 10);
+        }
+
+        for (int y = 0; y < height; y++) {
+            g.drawString(String.valueOf(y), 10, margin + y * cellSize + cellSize / 2 + 8);
+        }
+
+        for (Road road : roads) {
+            for (Cell cell : road.getLines()) {
+                int x = cell.getPosition().getX();
+                int y = cell.getPosition().getY();
+                Color roadColor = (cell.getDirection() != null) ? Color.WHITE : Color.DARK_GRAY;
+                g.setColor(roadColor);
+                g.fillRect(margin + x * cellSize, margin + y * cellSize, cellSize, cellSize);
+            }
+        }
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Cell cell = grid.getCell(x, y);
+                if (cell != null && cell.isOccupied()) {
+                    g.setColor(Color.ORANGE);
+                    g.fillRect(margin + x * cellSize, margin + y * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        if (goal != null) {
+            g.setColor(Color.RED);
+            g.fillRect(margin + goal.getX() * cellSize, margin + goal.getY() * cellSize, cellSize, cellSize);
+        }
+
+        for (Position pos : agentPositions.values()) {
+            g.setColor(Color.BLUE);
+            g.fillRect(margin + pos.getX() * cellSize, margin + pos.getY() * cellSize, cellSize, cellSize);
+        }
+
+        g.setColor(Color.GRAY);
+        g.setFont(new Font("Arial", Font.PLAIN, 12));
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                g.drawRect(margin + x * cellSize, margin + y * cellSize, cellSize, cellSize);
+                g.drawString("(" + x + "," + y + ")", margin + x * cellSize + 4, margin + y * cellSize + 16);
+            }
+        }
+
+        for (Road road : roads) {
+            for (Cell cell : road.getLines()) {
+                int x = cell.getPosition().getX();
+                int y = cell.getPosition().getY();
+                Color roadColor = (cell.getDirection() != null) ? Color.WHITE : Color.DARK_GRAY;
+                g.setColor(roadColor);
+                g.fillRect(margin + x * cellSize, margin + y * cellSize, cellSize, cellSize);
+
+                if (cell.getDirection() != null) {
+                    int cx = margin + x * cellSize + cellSize / 2;
+                    int cy = margin + y * cellSize + cellSize / 2;
+                    int arrowLen = cellSize / 3;
+                    int dx = 0, dy = 0;
+                    switch (cell.getDirection().toLowerCase()) {
+                        case "north":
+                            dy = -arrowLen;
+                            break;
+                        case "south":
+                            dy = arrowLen;
+                            break;
+                        case "east":
+                            dx = arrowLen;
+                            break;
+                        case "west":
+                            dx = -arrowLen;
+                            break;
+                    }
+
+                    g.setColor(Color.GREEN.darker());
+                    g.setStroke(new java.awt.BasicStroke(3));
+                    g.drawLine(cx, cy, cx + dx, cy + dy);
+
+                    int arrSize = 6;
+                    double angle = Math.atan2(dy, dx);
+                    double sin = Math.sin(angle), cos = Math.cos(angle);
+                    int px = cx + dx, py = cy + dy;
+                    int x1 = (int) (px - arrSize * cos + arrSize * sin);
+                    int y1 = (int) (py - arrSize * sin - arrSize * cos);
+                    int x2 = (int) (px - arrSize * cos - arrSize * sin);
+                    int y2 = (int) (py - arrSize * sin + arrSize * cos);
+                    g.drawLine(px, py, x1, y1);
+                    g.drawLine(px, py, x2, y2);
+                    g.setStroke(new java.awt.BasicStroke(1));
+                }
+            }
+        }
+
+        g.dispose();
+        try {
+            ImageIO.write(img, "png", new File(filename));
+            System.out.println("[MAP] PNG esportata in: " + filename);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initializeData() {
@@ -73,6 +200,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.agentPositions = new HashMap<>();
         this.agentIntentions = new HashMap<>();
         this.roads = new ArrayList<>();
+        this.allFootprints = new ArrayList<>();
     }
 
     private int[] parseGridProp(String s, int defW, int defH) {
@@ -163,17 +291,22 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
                 .stream()
                 .map(Intersection::new)
                 .toList();
+
+        this.allFootprints = intersections;
+        planner.setFootprints(intersections);
         this.intersectionDiscoveryService = new IntersectionDiscoveryService(intersections);
         this.intersectionDiscoveryService.addListener(this);
         ActionHandlerFactory.registerHandler("intersection",
                 new IntersectionActionHandler(planner, intersectionDiscoveryService));
 
-        List<Turn> turns = layout.getTurns().stream()
-                .map(p -> new Turn(p[0], p[1]))
-                .toList();
-        this.turnDiscoveryService = new TurnDiscoveryService(turns);
-        this.turnDiscoveryService.addListener(this);
-        ActionHandlerFactory.registerHandler("turn", new TurnActionHandler(turnDiscoveryService));
+        // List<Turn> turns = layout.getTurns().stream()
+        // .map(p -> new Turn(p[0], p[1]))
+        // .toList();
+        // this.turnDiscoveryService = new TurnDiscoveryService(turns);
+        // this.turnDiscoveryService.addListener(this);
+        // ActionHandlerFactory.registerHandler("turn", new
+        // TurnActionHandler(turnDiscoveryService));
+        exportMapAsPNG("traffic_map.png", null);
     }
 
     private int getIntProp(String key, int def) {
@@ -505,10 +638,6 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             int nx = x + offset[0];
             int ny = y + offset[1];
-
-            Cell nextCell = grid.getCell(nx, ny);
-            if (nextCell == null || nextCell.isOccupied())
-                continue;
 
             boolean intended = false;
             synchronized (agentActions) {
