@@ -114,8 +114,9 @@ public class RoadLayoutGenerator {
         }
 
         int minDistFromIntersections = 2;
-        Set<Position[]> standaloneTurns = generateStandaloneTurns(grid, width, heigh, verticalBases, horizontalBases,
-                footprints, minDistFromIntersections, random, roads);
+        // Set<Position[]> standaloneTurns = generateStandaloneTurns(grid, width, heigh,
+        // verticalBases, horizontalBases,
+        // footprints, minDistFromIntersections, random, roads);
 
         if (!areRoadsAllConnected(grid)) {
             int cy = Math.max(1, (heigh - 2) / 2);
@@ -132,11 +133,12 @@ public class RoadLayoutGenerator {
                     patchCenterDirections(grid, x, cy);
                 }
             }
-            standaloneTurns = generateStandaloneTurns(grid, width, heigh, verticalBases, horizontalBases, footprints,
-                    minDistFromIntersections, random, roads);
+            // standaloneTurns = generateStandaloneTurns(grid, width, heigh, verticalBases,
+            // horizontalBases, footprints,
+            // minDistFromIntersections, random, roads);
         }
 
-        return new RoadLayout(roads, footprints, null, standaloneTurns);
+        return new RoadLayout(roads, footprints, null, null);
     }
 
     private Set<Position[]> generateStandaloneTurns(Grid grid, int width, int height,
