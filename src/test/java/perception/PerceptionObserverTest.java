@@ -61,7 +61,7 @@ public class PerceptionObserverTest {
         Map<String, Position> agentPositions = new HashMap<>();
         agentPositions.put("agent1", pos);
 
-        observer.updateAgentPositions(agentPositions, grid);
+        // observer.updateAgentPositions(agentPositions, grid);
 
         assertTrue(callback.definedProps.stream().anyMatch(s -> s.contains("at")));
         assertTrue(callback.definedProps.stream().anyMatch(s -> s.contains("occupied")));

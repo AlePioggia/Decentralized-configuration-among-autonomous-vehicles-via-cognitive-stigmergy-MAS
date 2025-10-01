@@ -47,6 +47,10 @@ import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.awt.Font;
 
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import view.MapPanel;
+
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener, IntersectionDiscoveryListener {
 
     private MovementManager movementManager;
@@ -60,6 +64,8 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Map<String, Position> agentPositions;
     private List<Road> roads;
     private List<Intersection> allFootprints;
+    private List<Position> goalsPositions;
+    private MapPanel mapPanel;
 
     private Timer timer;
     private int interval = 5000;
@@ -70,7 +76,32 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         initializeServices();
         setupEnvironment();
         startSimulation();
-        exportMapAsPNG("traffic_map.png", null);
+        // exportMapAsPNG("traffic_map.png", null);
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Traffic Map");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            this.mapPanel = new MapPanel(this);
+            frame.add(this.mapPanel);
+            frame.pack();
+            frame.setVisible(true);
+        });
+
+    }
+
+    public List<Position> getGoals() {
+        return this.goalsPositions;
+    }
+
+    public Grid getGrid() {
+        return this.grid;
+    }
+
+    public List<Road> getRoads() {
+        return this.roads;
+    }
+
+    public Map<String, Position> getAgentPositions() {
+        return this.agentPositions;
     }
 
     public void exportMapAsPNG(String filename, Position goal) {
@@ -201,6 +232,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.agentIntentions = new HashMap<>();
         this.roads = new ArrayList<>();
         this.allFootprints = new ArrayList<>();
+        this.goalsPositions = new ArrayList<>();
     }
 
     private int[] parseGridProp(String s, int defW, int defH) {
@@ -453,6 +485,9 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             System.out.println("[JAVA] update perceptions");
             updatePerceptions();
+            if (this.mapPanel != null) {
+                this.mapPanel.repaint();
+            }
             signal("step_completed");
 
         } finally {
@@ -687,6 +722,12 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         }
         Random rand = new Random(System.nanoTime());
         Position goal = freeCells.get(rand.nextInt(freeCells.size()));
+
+        this.goalsPositions.add(goal);
+
+        if (this.mapPanel != null) {
+            this.mapPanel.repaint();
+        }
 
         gx.set(goal.getX());
         gy.set(goal.getY());
