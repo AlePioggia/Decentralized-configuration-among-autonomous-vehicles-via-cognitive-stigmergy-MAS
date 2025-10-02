@@ -21,7 +21,7 @@
             placeAgent(Name, X, Y, Result);
             .send(Name, tell, env_ready);
             .print("[spawner] ", Name, " position: ", X, ",", Y, " result=", Result);
-            .wait(1000);
+            .wait(500);
             I1 = I + 1;
             !spawn_loop(I1, N, Seed)
         } else {

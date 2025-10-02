@@ -43,9 +43,12 @@ get_name(ME) :- name(ME).
     +get_name(N);
     .print("[init] id=", N).
 
-+step_completed[source(percept)] : get_name(ME) <- 
++step_completed[source(percept)] : get_name(ME) & not goal_reached(ME) <- 
     .print("[step]");
     !loop.
+
++step_completed[source(percept)] : get_name(ME) & goal_reached(ME) <-
+    .print("[step] ", ME, " has reached the goal and will not move.").
 
 +!start : get_name(ME) & env_ready <-
     lookupArtifact("trafficEnv", EnvId);
@@ -63,8 +66,8 @@ get_name(ME) :- name(ME).
     .wait(500);
     !start.
 
-+!loop : get_name(ME) <- 
-    .wait(3000);
++!loop : get_name(ME) & not goal_reached(ME) <- 
+    .wait(100);
     !choose_action.
 
 +!loop : get_name(ME) & goal_reached(ME) <-
@@ -157,13 +160,15 @@ get_name(ME) :- name(ME).
 +!proceed_straight(X, Y, Direction) : get_name(ME) <-
     ?next_position(X, Y, Direction, NextX, NextY);
     .print("[move] straight to=(", NextX, ",", NextY, ")");
-    !check_coordination(NextX, NextY).
+    !check_traffic_light(NextX, NextY).
+    // !check_coordination(NextX, NextY).
 
 +!fallback_movement(X, Y) : get_name(ME) <-
     NextX = X + 1;
     NextY = Y;
-    .print("[fallback] to=(", NextX, ",", NextY, ")");
-    !check_coordination(NextX, NextY).
+    .print("[fallback] to=(", NextX, ",", NextY, ")").
+    !check_traffic_light(NextX, NextY).
+    // !check_coordination(NextX, NextY).
 
 { include("$jacamo/templates/common-cartago.asl") }
 { include("$jacamo/templates/common-moise.asl") }

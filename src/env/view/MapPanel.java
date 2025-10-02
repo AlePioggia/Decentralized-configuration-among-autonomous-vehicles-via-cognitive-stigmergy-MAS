@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.Map;
 
 import javax.swing.JPanel;
 
@@ -103,14 +104,26 @@ public class MapPanel extends JPanel {
             }
         }
 
-        for (Position pos : this.trafficEnvironment.getGoals()) {
+        for (Map.Entry<String, Position> entry : this.trafficEnvironment.getGoals().entrySet()) {
+            String agentId = entry.getKey();
+            Position goal = entry.getValue();
+            String agentNum = agentId.replaceAll("\\D+", "");
+
             g2D.setColor(Color.RED);
-            g2D.fillRect(margin + pos.getX() * cellSize, margin + pos.getY() * cellSize, cellSize, cellSize);
+            g2D.fillRect(margin + goal.getX() * cellSize, margin + goal.getY() * cellSize, cellSize, cellSize);
+            g2D.setColor(Color.WHITE);
+            g2D.drawString(agentNum, margin + goal.getX() * cellSize + 5, margin + goal.getY() * cellSize + 25);
         }
 
-        for (Position pos : this.trafficEnvironment.getAgentPositions().values()) {
+        for (Map.Entry<String, Position> entry : this.trafficEnvironment.getAgentPositions().entrySet()) {
+            String agentId = entry.getKey();
+            Position pos = entry.getValue();
+
+            String agentNum = agentId.replaceAll("\\D+", "");
             g2D.setColor(Color.BLUE);
             g2D.fillRect(margin + pos.getX() * cellSize, margin + pos.getY() * cellSize, cellSize, cellSize);
+            g2D.setColor(Color.WHITE);
+            g2D.drawString(agentNum, margin + pos.getX() * cellSize + 5, margin + pos.getY() * cellSize + 25);
         }
 
         g2D.setColor(Color.GRAY);

@@ -62,7 +62,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Map<String, Position> agentPositions;
     private List<Road> roads;
     private List<Intersection> allFootprints;
-    private List<Position> goalsPositions;
+    private Map<String, Position> goalsPositions;
     private MapPanel mapPanel;
 
     private Timer timer;
@@ -85,7 +85,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     }
 
-    public List<Position> getGoals() {
+    public Map<String, Position> getGoals() {
         return this.goalsPositions;
     }
 
@@ -111,7 +111,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.agentIntentions = new HashMap<>();
         this.roads = new ArrayList<>();
         this.allFootprints = new ArrayList<>();
-        this.goalsPositions = new ArrayList<>();
+        this.goalsPositions = new HashMap<>();
     }
 
     private int[] parseGridProp(String s, int defW, int defH) {
@@ -601,7 +601,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         Random rand = new Random(System.nanoTime());
         Position goal = freeCells.get(rand.nextInt(freeCells.size()));
 
-        this.goalsPositions.add(goal);
+        this.goalsPositions.put(getCurrentOpAgentId().toString(), goal);
 
         if (this.mapPanel != null) {
             this.mapPanel.repaint();
