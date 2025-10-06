@@ -54,8 +54,8 @@ public class BasicRoadFactoryImpl implements RoadFactory {
         List<Cell> secondLane = new ArrayList<>();
 
         IntStream.range(startY, endY).forEach(i -> {
-            mainLane.add(new Cell(x1, i, "North"));
-            secondLane.add(new Cell(x2, i, "South"));
+            mainLane.add(new Cell(x1, i, "South"));
+            secondLane.add(new Cell(x2, i, "North"));
         });
 
         return new Road("roadName", mainLane, secondLane);
