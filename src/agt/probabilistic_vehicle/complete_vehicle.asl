@@ -166,7 +166,7 @@ get_name(ME) :- name(ME).
 +!fallback_movement(X, Y) : get_name(ME) <-
     NextX = X + 1;
     NextY = Y;
-    .print("[fallback] to=(", NextX, ",", NextY, ")").
+    .print("[fallback] to=(", NextX, ",", NextY, ")");
     !check_traffic_light(NextX, NextY).
     // !check_coordination(NextX, NextY).
 
