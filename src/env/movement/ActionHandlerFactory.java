@@ -20,6 +20,8 @@ public class ActionHandlerFactory {
             return handlers.get("wait");
         } else if (action.startsWith("intersection:")) {
             return handlers.get("intersection");
+        } else if (action.startsWith("change_lane:")) {
+            return handlers.get("change_lane");
         } else {
             return handlers.get("default");
         }

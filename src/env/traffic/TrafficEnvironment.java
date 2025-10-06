@@ -25,6 +25,8 @@ import discovery.Turn;
 import discovery.TurnDiscoveryListener;
 import discovery.TurnDiscoveryService;
 import movement.ActionHandlerFactory;
+import movement.ChangeLaneActionHandler;
+import movement.ChangeLanePlanner;
 import movement.DefaultActionHandler;
 import movement.FollowActionHandler;
 import movement.IntersectionActionHandler;
@@ -156,10 +158,13 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         };
         this.perceptionObserver = new PerceptionObserver(callback);
 
+        ChangeLanePlanner changeLanePlanner = new ChangeLanePlanner(this.grid, this.allFootprints);
+
         ActionHandlerFactory.registerHandler("follow", new FollowActionHandler());
         // ActionHandlerFactory.registerHandler("turn", new
         // TurnActionHandler(turnDiscoveryService));
         ActionHandlerFactory.registerHandler("wait", new DefaultActionHandler());
+        ActionHandlerFactory.registerHandler("change_lane", new ChangeLaneActionHandler(changeLanePlanner));
         ActionHandlerFactory.registerHandler("default", new DefaultActionHandler());
     }
 

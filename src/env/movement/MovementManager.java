@@ -107,6 +107,12 @@ public class MovementManager {
         return agentPositions.get(agent);
     }
 
+    public String getCurrentDirection(String agent) {
+        Position pos = agentPositions.get(agent);
+        Cell cell = grid.getCell(pos.getX(), pos.getY());
+        return cell.getDirection();
+    }
+
     public Grid getGrid() {
         return grid;
     }
