@@ -552,61 +552,17 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     @OPERATION
     public void getBestIntersectionDirection(int x, int y, int goalX, int goalY, OpFeedbackParam<String> direction) {
-        String[] options = new String[] { "straight", "left", "right" };
-        String bestDir = null;
-        int bestDist = Integer.MAX_VALUE;
-
+        Position currentPosition = new Position(x, y);
+        Position goalPosition = new Position(goalX, goalY);
         Cell currentCell = grid.getCell(x, y);
         if (currentCell == null || currentCell.getDirection() == null) {
             direction.set("straight");
             return;
         }
-
-        for (String opt : options) {
-            String absDir = new IntersectionPlanner(grid, roads).rotateToRelative(currentCell.getDirection(), opt);
-            int[] offset = getOffsetFor(absDir);
-            if (offset == null)
-                continue;
-
-            int nx = x + offset[0];
-            int ny = y + offset[1];
-
-            boolean intended = false;
-            synchronized (agentActions) {
-                for (Map.Entry<String, String> entry : agentActions.entrySet()) {
-                    Position pos = agentPositions.get(entry.getKey());
-                    if (pos != null && pos.getX() == nx && pos.getY() == ny) {
-                        intended = true;
-                        break;
-                    }
-                }
-            }
-            if (intended)
-                continue;
-
-            int dist = Math.abs(nx - goalX) + Math.abs(ny - goalY);
-            if (dist < bestDist) {
-                bestDist = dist;
-                bestDir = opt;
-            }
-        }
-
-        direction.set(bestDir != null ? bestDir : "straight");
-    }
-
-    private int[] getOffsetFor(String dir) {
-        switch (dir) {
-            case "east":
-                return new int[] { +1, 0 };
-            case "west":
-                return new int[] { -1, 0 };
-            case "south":
-                return new int[] { 0, +1 };
-            case "north":
-                return new int[] { 0, -1 };
-            default:
-                return null;
-        }
+        IntersectionPlanner planner = movementManager.getIntersectionPlanner();
+        String bestDir = planner.getBestIntersectionDirection(currentPosition, currentCell.getDirection(), goalPosition,
+                agentPositions);
+        direction.set(bestDir);
     }
 
     @OPERATION

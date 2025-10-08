@@ -2,6 +2,7 @@ package movement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import core.Cell;
 import core.Grid;
@@ -75,6 +76,49 @@ public class IntersectionPlanner {
         }
         System.out.println("[DEBUG][Planner] No valid candidate found for " + action + " from " + currentPosition);
         return null;
+    }
+
+    public String getBestIntersectionDirection(Position currentPosition, String currentDirection, Position goalPosition,
+            Map<String, Position> agentPositions) {
+        String[] options = new String[] { "straight", "left", "right" };
+        String bestDir = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        for (String opt : options) {
+            String absDir = rotateToRelative(currentDirection, opt);
+            if (absDir == null)
+                continue;
+
+            int[][] offsets = orderedOffsetsFor(absDir);
+            for (int[] off : offsets) {
+                int nx = currentPosition.getX() + off[0];
+                int ny = currentPosition.getY() + off[1];
+                Position nextPos = new Position(nx, ny);
+
+                if (!core.Utils.isValidPosition(nextPos, grid, roads))
+                    continue;
+
+                Cell nextCell = grid.getCell(nx, ny);
+                if (nextCell == null || nextCell.isOccupied())
+                    continue;
+
+                boolean intended = agentPositions.values().stream().anyMatch(pos -> pos.equals(nextPos));
+                if (intended)
+                    continue;
+
+                int dist = Math.abs(nx - goalPosition.getX()) + Math.abs(ny - goalPosition.getY());
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestDir = opt;
+                }
+
+                if ((nx == goalPosition.getX() || ny == goalPosition.getY()) && dist < bestDist) {
+                    bestDist = dist;
+                    bestDir = opt;
+                }
+            }
+        }
+        return bestDir != null ? bestDir : "straight";
     }
 
     private boolean isIntersectionFootprint(Cell c) {
