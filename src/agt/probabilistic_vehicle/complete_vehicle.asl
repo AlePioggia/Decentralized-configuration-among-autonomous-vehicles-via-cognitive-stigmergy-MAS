@@ -5,9 +5,12 @@
 { include("src/agt/probabilistic_vehicle/modules/coordination.asl") }
 { include("src/agt/probabilistic_vehicle/modules/intersection_discovery.asl") }
 
-+at(ME, GX, GY) : goal(GX, GY) & not goal_reached(ME) <-
-    +goal_reached(ME);
-    .print("[goal-reached] ", ME, " (", GX, ",", GY, ")").
++at(ME, X, Y) : goal(GX, GY) & not goal_reached(ME) <-
+    isGoalReached(ME, X, Y, GX, GY, Reached);
+    if (Reached) {
+        +goal_reached(ME);
+        .print("[goal-reached] ", ME, " (", GX, ",", GY, ") [distance <= 1]");
+    }.
 
 +name(N)[source(ml)] <-
     +get_name(N);

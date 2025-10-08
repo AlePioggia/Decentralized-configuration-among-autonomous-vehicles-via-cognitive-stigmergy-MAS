@@ -403,6 +403,12 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         }
     }
 
+    @OPERATION
+    public void isGoalReached(String agentId, int x, int y, int goalX, int goalY, OpFeedbackParam<Boolean> result) {
+        int dist = Math.abs(x - goalX) + Math.abs(y - goalY);
+        result.set(dist <= 1);
+    }
+
     @Override
     public void onTurnDiscovered(String agentId, Turn turn) {
         this.perceptionObserver.notifyTurnAvailable(turn);
