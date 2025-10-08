@@ -385,6 +385,20 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             MovementResult result = movementManager.executeAction(agent, action);
 
+            Position goal = goalsPositions.get(agent);
+            Position current = agentPositions.get(agent);
+            if (goal != null && current != null && current.equals(goal)) {
+                Cell cell = grid.getCell(current.getX(), current.getY());
+                if (cell != null)
+                    cell.setOccupied(false);
+
+                agentPositions.remove(agent);
+
+                goalsPositions.remove(agent);
+
+                System.out.println("[INFO] Agent " + agent + " reached the goal and freed the cell.");
+            }
+
             System.out.println("[result] " + result.toString());
         }
     }
