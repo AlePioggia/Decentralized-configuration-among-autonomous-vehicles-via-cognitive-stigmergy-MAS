@@ -24,6 +24,7 @@ import discovery.IntersectionDiscoveryService;
 import discovery.Turn;
 import discovery.TurnDiscoveryListener;
 import discovery.TurnDiscoveryService;
+import metrics.Metrics;
 import movement.ActionHandlerFactory;
 import movement.ChangeLaneActionHandler;
 import movement.ChangeLanePlanner;
@@ -61,9 +62,10 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private List<Intersection> allFootprints;
     private Map<String, Position> goalsPositions;
     private MapPanel mapPanel;
+    private Metrics metrics = new Metrics();
 
     private Timer timer;
-    private int interval = 5000;
+    private int interval = 2000;
     private boolean running = false;
 
     public void init() {
@@ -367,7 +369,6 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
                 this.mapPanel.repaint();
             }
             signal("step_completed");
-
         } finally {
             running = false;
         }
@@ -378,11 +379,14 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
             String agent = entry.getKey();
             String action = entry.getValue();
 
+            metrics.step(agent);
+
             MovementResult result = movementManager.executeAction(agent, action);
 
             Position goal = goalsPositions.get(agent);
             Position current = agentPositions.get(agent);
-            if (goal != null && current != null && current.equals(goal)) {
+            if (goal != null && current != null &&
+                    (Math.abs(current.getX() - goal.getX()) + Math.abs(current.getY() - goal.getY()) <= 1)) {
                 Cell cell = grid.getCell(current.getX(), current.getY());
                 if (cell != null)
                     cell.setOccupied(false);
@@ -391,11 +395,30 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
                 goalsPositions.remove(agent);
 
+                metrics.goalReached(agent);
+
                 System.out.println("[INFO] Agent " + agent + " reached the goal and freed the cell.");
             }
 
             System.out.println("[result] " + result.toString());
         }
+        if (goalsPositions.isEmpty()) {
+            metrics.endSimulation();
+            metrics.printSummary();
+            stopSimulation();
+            showMetricsDialog();
+        }
+    }
+
+    private void showMetricsDialog() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            String summary = metrics.getSummaryString();
+            javax.swing.JOptionPane.showMessageDialog(
+                    null,
+                    summary,
+                    "Simulation Metrics",
+                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        });
     }
 
     @OPERATION
