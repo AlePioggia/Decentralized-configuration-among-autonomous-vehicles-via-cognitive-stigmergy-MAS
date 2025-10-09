@@ -42,11 +42,6 @@ import road.RoadLayout;
 import road.RoadLayoutGenerator;
 import core.Utils;
 
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.Color;
-import java.awt.Font;
-
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import view.MapPanel;
