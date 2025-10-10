@@ -101,7 +101,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void initializeData() {
-        int[] size = parseGridProp(System.getProperty("sim.grid"), 20, 20);
+        int[] size = parseGridProp(System.getProperty("sim.grid"), 40, 40);
         this.grid = new Grid(size[0], size[1]);
         defineObsProperty("grid_width", grid.getWidth());
         defineObsProperty("grid_height", grid.getHeight());
@@ -180,8 +180,8 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void setupEnvironmentDynamicFromProps() {
-        int vroads = getIntProp("sim.vroads", 2);
-        int hroads = getIntProp("sim.hroads", 2);
+        int vroads = getIntProp("sim.vroads", 5);
+        int hroads = getIntProp("sim.hroads", 5);
         int spacing = getIntProp("sim.spacing", 3);
         long seed = getLongProp("sim.seed", 12345L);
         boolean randpos = Boolean.getBoolean("sim.randpos");
@@ -282,7 +282,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     @OPERATION
     public void getSimAgents(OpFeedbackParam<Integer> n) {
-        n.set(getIntProp("sim.agents", 5));
+        n.set(getIntProp("sim.agents", 20));
     }
 
     @OPERATION

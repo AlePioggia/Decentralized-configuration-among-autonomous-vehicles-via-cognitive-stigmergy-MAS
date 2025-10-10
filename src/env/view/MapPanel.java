@@ -17,8 +17,8 @@ import traffic.TrafficEnvironment;
 
 public class MapPanel extends JPanel {
     private final TrafficEnvironment trafficEnvironment;
-    private final int cellSize = 40;
-    private final int margin = 40;
+    private final int cellSize = 20;
+    private final int margin = 20;
 
     public MapPanel(TrafficEnvironment trafficEnvironment) {
         this.trafficEnvironment = trafficEnvironment;
@@ -40,7 +40,7 @@ public class MapPanel extends JPanel {
         g2D.fillRect(0, 0, getWidth(), getHeight());
 
         g2D.setColor(Color.WHITE);
-        g2D.setFont(new Font("Arial", Font.PLAIN, 16));
+        g2D.setFont(new Font("Arial", Font.PLAIN, 12));
         for (int x = 0; x < width; x++) {
             g2D.drawString(String.valueOf(x), margin + x * cellSize + cellSize / 2 - 8, margin - 10);
         }
@@ -112,7 +112,10 @@ public class MapPanel extends JPanel {
             g2D.setColor(Color.RED);
             g2D.fillRect(margin + goal.getX() * cellSize, margin + goal.getY() * cellSize, cellSize, cellSize);
             g2D.setColor(Color.WHITE);
-            g2D.drawString(agentNum, margin + goal.getX() * cellSize + 5, margin + goal.getY() * cellSize + 25);
+            int textX = margin + goal.getX() * cellSize + cellSize / 2 - 6;
+            int textY = margin + goal.getY() * cellSize + cellSize / 2 + 6;
+            g2D.drawString(agentNum, textX, textY);
+
         }
 
         for (Map.Entry<String, Position> entry : this.trafficEnvironment.getAgentPositions().entrySet()) {
@@ -123,17 +126,21 @@ public class MapPanel extends JPanel {
             g2D.setColor(Color.BLUE);
             g2D.fillRect(margin + pos.getX() * cellSize, margin + pos.getY() * cellSize, cellSize, cellSize);
             g2D.setColor(Color.WHITE);
-            g2D.drawString(agentNum, margin + pos.getX() * cellSize + 5, margin + pos.getY() * cellSize + 25);
+            int textAX = margin + pos.getX() * cellSize + cellSize / 2 - 6;
+            int textAY = margin + pos.getY() * cellSize + cellSize / 2 + 6;
+            g2D.drawString(agentNum, textAX, textAY);
         }
 
-        g2D.setColor(Color.GRAY);
-        g2D.setFont(new Font("Arial", Font.PLAIN, 12));
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                g2D.drawRect(margin + x * cellSize, margin + y * cellSize, cellSize, cellSize);
-                g2D.drawString("(" + x + "," + y + ")", margin + x * cellSize + 4, margin + y * cellSize + 16);
-            }
-        }
+        // g2D.setColor(Color.GRAY);
+        // g2D.setFont(new Font("Arial", Font.PLAIN, 12));
+        // for (int y = 0; y < height; y++) {
+        // for (int x = 0; x < width; x++) {
+        // g2D.drawRect(margin + x * cellSize, margin + y * cellSize, cellSize,
+        // cellSize);
+        // g2D.drawString("(" + x + "," + y + ")", margin + x * cellSize + 4, margin + y
+        // * cellSize + 16);
+        // }
+        // }
 
     }
 
