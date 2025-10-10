@@ -1,8 +1,12 @@
 package movement;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import core.Cell;
 import core.Grid;
@@ -78,47 +82,107 @@ public class IntersectionPlanner {
         return null;
     }
 
-    public String getBestIntersectionDirection(Position currentPosition, String currentDirection, Position goalPosition,
+    // public String getBestIntersectionDirection(Position currentPosition, String
+    // currentDirection, Position goalPosition,
+    // Map<String, Position> agentPositions) {
+    // String[] options = new String[] { "straight", "left", "right" };
+    // String bestDir = null;
+    // int bestDist = Integer.MAX_VALUE;
+
+    // for (String opt : options) {
+    // String absDir = rotateToRelative(currentDirection, opt);
+    // if (absDir == null)
+    // continue;
+
+    // int[][] offsets = orderedOffsetsFor(absDir);
+    // for (int[] off : offsets) {
+    // int nx = currentPosition.getX() + off[0];
+    // int ny = currentPosition.getY() + off[1];
+    // Position nextPos = new Position(nx, ny);
+
+    // if (!core.Utils.isValidPosition(nextPos, grid, roads))
+    // continue;
+
+    // Cell nextCell = grid.getCell(nx, ny);
+    // if (nextCell == null || nextCell.isOccupied())
+    // continue;
+
+    // boolean intended = agentPositions.values().stream().anyMatch(pos ->
+    // pos.equals(nextPos));
+    // if (intended)
+    // continue;
+
+    // int dist = Math.abs(nx - goalPosition.getX()) + Math.abs(ny -
+    // goalPosition.getY());
+    // if (dist < bestDist) {
+    // bestDist = dist;
+    // bestDir = opt;
+    // }
+
+    // if ((nx == goalPosition.getX() || ny == goalPosition.getY()) && dist <
+    // bestDist) {
+    // bestDist = dist;
+    // bestDir = opt;
+    // }
+    // }
+    // }
+    // return bestDir != null ? bestDir : "straight";
+    // }
+
+    public String getBestIntersectionDirection(Position currentPosition, String currentDirection,
+            Position goalPosition,
             Map<String, Position> agentPositions) {
         String[] options = new String[] { "straight", "left", "right" };
         String bestDir = null;
-        int bestDist = Integer.MAX_VALUE;
+        int minSteps = Integer.MAX_VALUE;
 
         for (String opt : options) {
             String absDir = rotateToRelative(currentDirection, opt);
-            if (absDir == null)
-                continue;
-
             int[][] offsets = orderedOffsetsFor(absDir);
-            for (int[] off : offsets) {
-                int nx = currentPosition.getX() + off[0];
-                int ny = currentPosition.getY() + off[1];
-                Position nextPos = new Position(nx, ny);
+            if (offsets.length == 0)
+                continue;
+            int[] off = offsets[0];
+            Position startPos = new Position(currentPosition.getX() + off[0], currentPosition.getY() + off[1]);
 
-                if (!core.Utils.isValidPosition(nextPos, grid, roads))
-                    continue;
-
-                Cell nextCell = grid.getCell(nx, ny);
-                if (nextCell == null || nextCell.isOccupied())
-                    continue;
-
-                boolean intended = agentPositions.values().stream().anyMatch(pos -> pos.equals(nextPos));
-                if (intended)
-                    continue;
-
-                int dist = Math.abs(nx - goalPosition.getX()) + Math.abs(ny - goalPosition.getY());
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestDir = opt;
-                }
-
-                if ((nx == goalPosition.getX() || ny == goalPosition.getY()) && dist < bestDist) {
-                    bestDist = dist;
-                    bestDir = opt;
-                }
+            int steps = bfsStepsToGoal(startPos, goalPosition, agentPositions);
+            if (steps >= 0 && steps < minSteps) {
+                minSteps = steps;
+                bestDir = opt;
             }
         }
         return bestDir != null ? bestDir : "straight";
+    }
+
+    private int bfsStepsToGoal(Position start, Position goal, Map<String, Position> agentPositions) {
+        Set<Position> visited = new HashSet<>();
+        Queue<Position> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start);
+        int steps = 0;
+
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                Position pos = queue.poll();
+                if (pos.equals(goal))
+                    return steps;
+                for (int[] off : new int[][] { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) {
+                    Position next = new Position(pos.getX() + off[0], pos.getY() + off[1]);
+                    if (next.getX() < 0 || next.getX() >= grid.getWidth() ||
+                            next.getY() < 0 || next.getY() >= grid.getHeight())
+                        continue;
+                    if (visited.contains(next))
+                        continue;
+                    Cell cell = grid.getCell(next.getX(), next.getY());
+                    if (cell == null || cell.isOccupied() || !core.Utils.isValidPosition(next, grid, roads))
+                        continue;
+                    visited.add(next);
+                    queue.add(next);
+                }
+            }
+            steps++;
+        }
+        return -1;
     }
 
     private boolean isIntersectionFootprint(Cell c) {
@@ -131,29 +195,29 @@ public class IntersectionPlanner {
     }
 
     public String rotateToRelative(String absoluteDirection, String relativeDirection) {
-        switch (absoluteDirection) {
-            case "North":
+        switch (absoluteDirection.toLowerCase()) {
+            case "north":
                 return switch (relativeDirection) {
                     case "right" -> "east";
                     case "left" -> "west";
                     case "straight" -> "north";
                     default -> null;
                 };
-            case "South":
+            case "south":
                 return switch (relativeDirection) {
                     case "right" -> "west";
                     case "left" -> "east";
                     case "straight" -> "south";
                     default -> null;
                 };
-            case "East":
+            case "east":
                 return switch (relativeDirection) {
                     case "right" -> "south";
                     case "left" -> "north";
                     case "straight" -> "east";
                     default -> null;
                 };
-            case "West":
+            case "west":
                 return switch (relativeDirection) {
                     case "right" -> "north";
                     case "left" -> "south";
@@ -166,7 +230,7 @@ public class IntersectionPlanner {
     }
 
     private int[][] orderedOffsetsFor(String targetDir) {
-        switch (targetDir) {
+        switch (targetDir.toLowerCase()) {
             case "east":
                 return new int[][] { { +1, 0 }, { +1, +1 }, { +1, -1 } };
             case "west":
