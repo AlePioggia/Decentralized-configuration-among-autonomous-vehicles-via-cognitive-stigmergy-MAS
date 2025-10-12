@@ -132,7 +132,7 @@ public class IntersectionPlanner {
     public String getBestIntersectionDirection(Position currentPosition, String currentDirection,
             Position goalPosition,
             Map<String, Position> agentPositions) {
-        String[] options = new String[] { "straight", "left", "right" };
+        String[] options = new String[] { "straight", "left", "right", "uturn" };
         String bestDir = null;
         int minSteps = Integer.MAX_VALUE;
 
@@ -201,6 +201,7 @@ public class IntersectionPlanner {
                     case "right" -> "east";
                     case "left" -> "west";
                     case "straight" -> "north";
+                    case "uturn" -> "south";
                     default -> null;
                 };
             case "south":
@@ -208,6 +209,7 @@ public class IntersectionPlanner {
                     case "right" -> "west";
                     case "left" -> "east";
                     case "straight" -> "south";
+                    case "uturn" -> "north";
                     default -> null;
                 };
             case "east":
@@ -215,6 +217,7 @@ public class IntersectionPlanner {
                     case "right" -> "south";
                     case "left" -> "north";
                     case "straight" -> "east";
+                    case "uturn" -> "west";
                     default -> null;
                 };
             case "west":
@@ -222,6 +225,7 @@ public class IntersectionPlanner {
                     case "right" -> "north";
                     case "left" -> "south";
                     case "straight" -> "west";
+                    case "uturn" -> "east";
                     default -> null;
                 };
             default:
@@ -239,6 +243,14 @@ public class IntersectionPlanner {
                 return new int[][] { { 0, +1 }, { -1, +1 }, { +1, +1 } };
             case "north":
                 return new int[][] { { 0, -1 }, { +1, -1 }, { -1, -1 } };
+            case "uturn_north":
+                return new int[][] { { 0, -1 } };
+            case "uturn_south":
+                return new int[][] { { 0, +1 } };
+            case "uturn_east":
+                return new int[][] { { +1, 0 } };
+            case "uturn_west":
+                return new int[][] { { -1, 0 } };
             default:
                 return new int[0][];
         }
