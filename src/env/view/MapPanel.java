@@ -14,6 +14,7 @@ import core.Cell;
 import core.Position;
 import road.Road;
 import traffic.TrafficEnvironment;
+import core.Position;
 
 public class MapPanel extends JPanel {
     private final TrafficEnvironment trafficEnvironment;
@@ -131,17 +132,38 @@ public class MapPanel extends JPanel {
             g2D.drawString(agentNum, textAX, textAY);
         }
 
-        // g2D.setColor(Color.GRAY);
-        // g2D.setFont(new Font("Arial", Font.PLAIN, 12));
-        // for (int y = 0; y < height; y++) {
-        // for (int x = 0; x < width; x++) {
-        // g2D.drawRect(margin + x * cellSize, margin + y * cellSize, cellSize,
-        // cellSize);
-        // g2D.drawString("(" + x + "," + y + ")", margin + x * cellSize + 4, margin + y
-        // * cellSize + 16);
-        // }
-        // }
+        // Sidebar metrics
+        int sidebarX = margin + width * cellSize + 30;
+        int sidebarY = margin;
+        g2D.setColor(Color.WHITE);
+        g2D.setFont(new Font("Arial", Font.BOLD, 16));
+        g2D.drawString("Metrics", sidebarX, sidebarY);
 
+        g2D.setFont(new Font("Arial", Font.PLAIN, 14));
+        sidebarY += 30;
+        g2D.drawString("Goals discovered: " + trafficEnvironment.getDiscoveredGoals().size() +
+                " / " + trafficEnvironment.getGoals().size(), sidebarX, sidebarY);
+
+        sidebarY += 25;
+        g2D.drawString("Agents:", sidebarX, sidebarY);
+
+        sidebarY += 20;
+        for (Map.Entry<String, Position> entry : trafficEnvironment.getAgentPositions().entrySet()) {
+            String agentId = entry.getKey();
+            String status;
+            if (trafficEnvironment.isAgentExploring(agentId)) {
+                status = "Exploring";
+            } else {
+                status = "Goal-oriented";
+            }
+            String intent = trafficEnvironment.getAgentActions().getOrDefault(agentId, "None").toString();
+
+            Position goal = trafficEnvironment.getDiscoveredGoals().get(agentId);
+            String goalStr = (goal != null) ? " | Goal: (" + goal.getX() + "," + goal.getY() + ")" : "";
+
+            g2D.drawString(agentId + ": " + status + " | Intent: " + intent + goalStr, sidebarX, sidebarY);
+            sidebarY += 18;
+        }
     }
 
 }

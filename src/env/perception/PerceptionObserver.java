@@ -1,5 +1,6 @@
 package perception;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import discovery.Intersection;
 import discovery.Turn;
 import jason.asSyntax.ListTermImpl;
 import jason.asSyntax.NumberTermImpl;
+import jason.asSyntax.StringTermImpl;
 
 public class PerceptionObserver {
 
@@ -32,7 +34,7 @@ public class PerceptionObserver {
     }
 
     public void updateAgentPositions(Map<String, Position> agentPosition, Map<String, Position> agentIntentions,
-            Grid grid) {
+            Map<String, Position> goalsPositions, Grid grid) {
         clearProperties();
 
         List<Object[]> occList = updateOccupantsProperty(grid);
@@ -40,6 +42,8 @@ public class PerceptionObserver {
         System.out.println("[JAVA] occupants: " + Arrays.deepToString(occList.toArray()));
 
         updateAgentIntentions(agentIntentions);
+
+        updateGoalCells(goalsPositions);
 
         for (Map.Entry<String, Position> entry : agentPosition.entrySet()) {
             String agentId = entry.getKey();
@@ -52,6 +56,28 @@ public class PerceptionObserver {
             if (cell != null && cell.getDirection() != null) {
                 callback.defineObsProperty("direction", position.getX(), position.getY(), cell.getDirection());
             }
+        }
+    }
+
+    private void updateGoalCells(Map<String, Position> goalsPositions) {
+        try {
+            callback.removeObsPropertyByTemplate("goal_cells", null, null, null);
+        } catch (Exception e) {
+        }
+        ListTermImpl goalListTerm = new ListTermImpl();
+        for (Map.Entry<String, Position> entry : goalsPositions.entrySet()) {
+            String agentId = entry.getKey();
+            Position position = entry.getValue();
+            ListTermImpl cell = new ListTermImpl();
+            cell.add(new StringTermImpl(agentId));
+            cell.add(new NumberTermImpl(position.getX()));
+            cell.add(new NumberTermImpl(position.getY()));
+            goalListTerm.add(cell);
+        }
+        try {
+            callback.updateObsProperty("goal_cells", goalListTerm);
+        } catch (Exception e) {
+            callback.defineObsProperty("goal_cells", goalListTerm);
         }
     }
 

@@ -1,5 +1,6 @@
 package traffic;
 
+import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private List<Road> roads;
     private List<Intersection> allFootprints;
     private Map<String, Position> goalsPositions;
+    private Map<String, Position> discoveredGoals;
     private MapPanel mapPanel;
     private Metrics metrics = new Metrics();
 
@@ -111,6 +113,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.roads = new ArrayList<>();
         this.allFootprints = new ArrayList<>();
         this.goalsPositions = new HashMap<>();
+        this.discoveredGoals = new HashMap<>();
     }
 
     private int[] parseGridProp(String s, int defW, int defH) {
@@ -504,7 +507,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     private void updatePerceptions() {
-        perceptionObserver.updateAgentPositions(agentPositions, agentIntentions, grid);
+        perceptionObserver.updateAgentPositions(agentPositions, agentIntentions, goalsPositions, grid);
     }
 
     private void updateIntentions() {
@@ -590,23 +593,54 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     @OPERATION
-    public void assignGoal(OpFeedbackParam<Integer> gx, OpFeedbackParam<Integer> gy) {
+    public void assignGoal() {
         var freeCells = collectFreeRoadCells();
-        if (freeCells.isEmpty()) {
-            gx.set(-1);
-            gy.set(-1);
-            return;
-        }
+        freeCells.removeAll(this.goalsPositions.values());
         Random rand = new Random(System.nanoTime());
         Position goal = freeCells.get(rand.nextInt(freeCells.size()));
 
         this.goalsPositions.put(getCurrentOpAgentId().toString(), goal);
 
+        defineObsProperty("goal_cell", getCurrentOpAgentId().toString(), goal.getX(), goal.getY());
+
         if (this.mapPanel != null) {
             this.mapPanel.repaint();
         }
-
-        gx.set(goal.getX());
-        gy.set(goal.getY());
     }
+
+    @OPERATION
+    public void discoverGoal(String agentId, int x, int y) {
+        Position position = new Position(x, y);
+        this.discoveredGoals.put(agentId, position);
+    }
+
+    @OPERATION
+    public void hasGoalBeenDiscovered(String agentId,
+            OpFeedbackParam<Boolean> result,
+            OpFeedbackParam<Integer> gx,
+            OpFeedbackParam<Integer> gy) {
+        Position p = this.discoveredGoals.get(agentId);
+        boolean found = (p != null);
+        result.set(found);
+        if (found) {
+            gx.set(p.getX());
+            gy.set(p.getY());
+        } else {
+            gx.set(-1);
+            gy.set(-1);
+        }
+    }
+
+    public Map<String, Position> getDiscoveredGoals() {
+        return this.discoveredGoals;
+    }
+
+    public boolean isAgentExploring(String agentId) {
+        return !this.discoveredGoals.containsKey(agentId);
+    }
+
+    public Map<String, String> getAgentActions() {
+        return this.agentActions;
+    }
+
 }

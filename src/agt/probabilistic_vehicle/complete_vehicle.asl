@@ -26,9 +26,7 @@
     lookupArtifact("light2", Light2Id);
     focus(Light2Id);
     publishGridSize;
-    assignGoal(GX, GY);
-    .print("[goal] assigned to=(", GX, ",", GY, ")");
-    +goal(GX, GY);
+    assignGoal;
     .wait(1000); 
     !start.  
 
@@ -80,49 +78,32 @@ get_name(ME) :- name(ME).
     .print("[choose] pos=(", X, ",", Y, ") dir=", Direction);
     explore(ME, X, Y, Direction);
     .wait(100);
-    
-    // ?get_available_intersections(X, Y, AvailableIntersections);
-    ?get_available_turns(X, Y, AvailableTurns);
-    
+
+    ?goal_cells(GoalCells);
+    if (.member([ME, X, Y], GoalCells)) {
+        +goal(X, Y);
+    } 
+    if (.member([A, X, Y], GoalCells) & A \== ME) {
+        discoverGoal(A, X, Y);
+    }
+
+    hasGoalBeenDiscovered(ME, Found, GX, GY);
+    if (Found & not goal(GX, GY)) {
+        +goal(GX, GY);
+    }
+
     if (has_available_intersections(X, Y)) {
-        .print("[intersection] seen pos=(", X, ",", Y, ")");
-        !decide_intersection_or_straight_goal_oriented(X, Y, Direction);
-    } else {
-        if (AvailableTurns \== []) {
-            .print("[turns] available=", AvailableTurns);
-            !decide_turn_or_straight(X, Y, Direction, AvailableTurns);
+        if (goal(GX, GY)) {
+            !decide_intersection_or_straight_goal_oriented(X, Y, GX, GY, Direction);
         } else {
-            !proceed_straight(X, Y, Direction);
+            !decide_intersection_or_straight(X, Y, Direction);
         }
-    }.
-
-
-+!choose_action : get_name(ME) & at(ME, X, Y) <- 
-    .print("[choose] pos=(", X, ",", Y, ") dir=unknown");
-    explore(ME, X, Y, "unknown");
-    .wait(100);
-    
-    ?get_available_turns(X, Y, AvailableTurns);
-    
-    if (AvailableTurns \== []) {
-        !decide_turn_or_straight(X, Y, "East", AvailableTurns); 
     } else {
-        !fallback_movement(X, Y);
-    }.
-
-+!decide_turn_or_straight(X, Y, Direction, AvailableTurns) : get_name(ME) <-
-    .random(RandomValue);
-    TurnProbability = 1;
-    
-    if (RandomValue < TurnProbability) {
-        .print("[decision] turn (r=", RandomValue, " < p=", TurnProbability, ")");
-        !execute_turn(X, Y, AvailableTurns);
-    } else {
-        .print("[decision] straight (r=", RandomValue, " >= p=", TurnProbability, ")");
         !proceed_straight(X, Y, Direction);
     }.
 
-+!decide_intersection_or_straight_goal_oriented(X, Y, Direction) : get_name(ME) & goal(GX, GY) <-
+
++!decide_intersection_or_straight_goal_oriented(X, Y, GX, GY, Direction) : get_name(ME) <-
     getBestIntersectionDirection(X, Y, GX, GY, Target);
     .print("[intersection-goal] target=", Target);
     !execute_intersection(Target).
@@ -142,19 +123,6 @@ get_name(ME) :- name(ME).
     .print("[intersection] target=", Target);
     !execute_intersection(Target).
 
-+!execute_turn(X, Y, AvailableTurns) : get_name(ME) <-
-    .length(AvailableTurns, NumTurns);
-    .random(TurnIndex);
-    TurnChoiceIndex = math.floor(TurnIndex * NumTurns);
-    .nth(TurnChoiceIndex, AvailableTurns, [ToX, ToY]);
-    .term2string(ToX, ToXStr);
-    .term2string(ToY, ToYStr);
-    .concat("turn:", ToXStr, Part1);
-    .concat(Part1, ",", Part2);
-    .concat(Part2, ToYStr, TurnAction);
-    .print("[turn] to=(", ToX, ",", ToY, ") action=", TurnAction);
-    writeIntent(ME, TurnAction).
-
 +!execute_intersection(Target) : get_name(ME) <-
     .concat("intersection:", Target, Action);
     .print("[intersection] action=", Action);
@@ -163,14 +131,14 @@ get_name(ME) :- name(ME).
 +!proceed_straight(X, Y, Direction) : get_name(ME) <-
     ?next_position(X, Y, Direction, NextX, NextY);
     .print("[move] straight to=(", NextX, ",", NextY, ")");
-    !check_traffic_light(NextX, NextY).
+    !execute_move(NextX, NextY).
     // !check_coordination(NextX, NextY).
 
 +!fallback_movement(X, Y) : get_name(ME) <-
     NextX = X + 1;
     NextY = Y;
     .print("[fallback] to=(", NextX, ",", NextY, ")");
-    !check_traffic_light(NextX, NextY).
+    !execute_move(NextX, NextY).
     // !check_coordination(NextX, NextY).
 
 { include("$jacamo/templates/common-cartago.asl") }
