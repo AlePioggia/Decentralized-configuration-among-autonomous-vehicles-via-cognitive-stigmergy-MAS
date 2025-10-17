@@ -67,7 +67,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Metrics metrics = new Metrics();
 
     private Timer timer;
-    private int interval = 1000;
+    private int interval = 2000;
     private boolean running = false;
 
     public void init() {
