@@ -67,7 +67,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Metrics metrics = new Metrics();
 
     private Timer timer;
-    private int interval = 2000;
+    private int interval = 1000;
     private boolean running = false;
 
     public void init() {
@@ -285,7 +285,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     @OPERATION
     public void getSimAgents(OpFeedbackParam<Integer> n) {
-        n.set(getIntProp("sim.agents", 20));
+        n.set(getIntProp("sim.agents", 33));
     }
 
     @OPERATION
@@ -405,7 +405,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             System.out.println("[result] " + result.toString());
         }
-        if (goalsPositions.isEmpty()) {
+        if (goalsPositions.size() <= 3) {
             metrics.endSimulation();
             metrics.printSummary();
             stopSimulation();

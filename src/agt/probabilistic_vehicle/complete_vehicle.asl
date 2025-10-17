@@ -86,7 +86,19 @@ get_name(ME) :- name(ME).
     if (.member([A, X, Y], GoalCells) & A \== ME) {
         discoverGoal(A, X, Y);
     }
-
+    if (.member([A, X + 1, Y], GoalCells) & A \== ME) {
+        discoverGoal(A, X + 1, Y);
+    }
+    if (.member([A, X - 1, Y], GoalCells) & A \== ME) {
+        discoverGoal(A, X - 1, Y);
+    }
+    if (.member([A, X, Y + 1], GoalCells) & A \== ME) {
+        discoverGoal(A, X, Y + 1);
+    }
+    if (.member([A, X, Y - 1], GoalCells) & A \== ME) {
+        discoverGoal(A, X, Y - 1);
+    }
+    
     hasGoalBeenDiscovered(ME, Found, GX, GY);
     if (Found & not goal(GX, GY)) {
         +goal(GX, GY);
