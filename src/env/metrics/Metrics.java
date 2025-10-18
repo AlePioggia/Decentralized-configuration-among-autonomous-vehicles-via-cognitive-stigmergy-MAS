@@ -9,6 +9,7 @@ public class Metrics {
     private Map<String, Integer> steps = new HashMap<>();
     private Map<String, Long> agentStartTimes = new HashMap<>();
     private Map<String, Long> agentEndTimes = new HashMap<>();
+    private int numInterations = 0;
     private int totalSteps = 0;
     private int goalsReached = 0;
     private long startTime;
@@ -22,9 +23,13 @@ public class Metrics {
         agentStartTimes.put(agentId, System.currentTimeMillis());
     }
 
-    public void step(String agentId) {
+    public void updateTotalSteps(String agentId) {
         steps.put(agentId, steps.getOrDefault(agentId, 0) + 1);
         totalSteps++;
+    }
+
+    public void iteration() {
+        numInterations++;
     }
 
     public void goalReached(String agentId) {
@@ -70,14 +75,40 @@ public class Metrics {
 
     public double getTimeStdDev() {
         List<Long> times = new ArrayList<>();
-        for (String agent : agentStartTimes.keySet()) {
+        for (String agent : agentEndTimes.keySet()) {
+            long t = getAgentElapsedTime(agent);
+            if (t > 0) {
+                times.add(t);
+            }
+        }
+        int n = times.size();
+        if (n == 0)
+            return 0.0;
+        double mean = times.stream().mapToDouble(Long::doubleValue).average().orElse(0.0);
+        double sumSq = times.stream().mapToDouble(v -> {
+            double d = v - mean;
+            return d * d;
+        }).sum();
+        double variance = sumSq / n;
+        return Math.sqrt(variance);
+    }
+
+    public double getTimeStdDevSample() {
+        List<Long> times = new ArrayList<>();
+        for (String agent : agentEndTimes.keySet()) {
             long t = getAgentElapsedTime(agent);
             if (t > 0)
                 times.add(t);
         }
-        double mean = times.stream().mapToLong(i -> i).average().orElse(0.0);
-        double variance = times.stream().mapToDouble(i -> Math.pow(i - mean, 2)).sum() / times.size();
-        return Math.sqrt(variance);
+        int n = times.size();
+        if (n <= 1)
+            return 0.0;
+        double mean = times.stream().mapToDouble(Long::doubleValue).average().orElse(0.0);
+        double sumSq = times.stream().mapToDouble(v -> {
+            double d = v - mean;
+            return d * d;
+        }).sum();
+        return Math.sqrt(sumSq / (n - 1));
     }
 
     public double getStepEquityRatio() {
@@ -122,5 +153,9 @@ public class Metrics {
         sb.append("Step equity ratio: ").append(getStepEquityRatio()).append("\n");
         sb.append("Time equity ratio: ").append(getTimeEquityRatio()).append("\n");
         return sb.toString();
+    }
+
+    public int getNumInterations() {
+        return numInterations;
     }
 }

@@ -132,7 +132,6 @@ public class MapPanel extends JPanel {
             g2D.drawString(agentNum, textAX, textAY);
         }
 
-        // Sidebar metrics
         int sidebarX = margin + width * cellSize + 30;
         int sidebarY = margin;
         g2D.setColor(Color.WHITE);
@@ -143,6 +142,9 @@ public class MapPanel extends JPanel {
         sidebarY += 30;
         g2D.drawString("Goals discovered: " + trafficEnvironment.getDiscoveredGoals().size() +
                 " / " + trafficEnvironment.getGoals().size(), sidebarX, sidebarY);
+
+        g2D.drawString("current steps: " + trafficEnvironment.getMetrics().getTotalSteps(), sidebarX, sidebarY + 20);
+        g2D.drawString("iterations: " + trafficEnvironment.getMetrics().getNumInterations(), sidebarX, sidebarY + 40);
 
         sidebarY += 25;
         g2D.drawString("Agents:", sidebarX, sidebarY);

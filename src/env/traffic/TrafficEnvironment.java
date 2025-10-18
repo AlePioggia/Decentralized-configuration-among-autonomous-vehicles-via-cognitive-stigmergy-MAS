@@ -91,6 +91,10 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         return this.goalsPositions;
     }
 
+    public Metrics getMetrics() {
+        return this.metrics;
+    }
+
     public Grid getGrid() {
         return this.grid;
     }
@@ -177,7 +181,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         boolean res = false;
         if (p != null && q != null) {
             int d = Math.abs(q.getX() - p.getX()) + Math.abs(q.getY() - p.getY());
-            res = d <= 5;
+            res = d <= 1;
         }
         yes.set(res);
     }
@@ -406,6 +410,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             System.out.println("[JAVA] update perceptions");
             updatePerceptions();
+            metrics.iteration();
             if (this.mapPanel != null) {
                 this.mapPanel.repaint();
             }
@@ -420,7 +425,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
             String agent = entry.getKey();
             String action = entry.getValue();
 
-            metrics.step(agent);
+            metrics.updateTotalSteps(agent);
 
             MovementResult result = movementManager.executeAction(agent, action);
 
@@ -443,7 +448,9 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             System.out.println("[result] " + result.toString());
         }
-        if (goalsPositions.size() <= 3 & spawnComplete) {
+        System.out.println("total steps: " + metrics.getTotalSteps());
+
+        if ((goalsPositions.size() <= 3 & spawnComplete) | (metrics.getTotalSteps() >= 10000)) {
             metrics.endSimulation();
             metrics.printSummary();
             stopSimulation();
