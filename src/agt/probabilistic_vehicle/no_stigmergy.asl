@@ -40,7 +40,8 @@ get_name(ME) :- name(ME).
     +get_name(N);
     .print("[init] id=", N).
 
-+step_completed[source(percept)] : get_name(ME) & not goal_reached(ME) <- 
++step_completed[source(percept)] : get_name(ME) & not goal_reached(ME) <-
+    !share_goal;
     .print("[step]");
     !loop.
 
@@ -76,32 +77,25 @@ get_name(ME) :- name(ME).
     .wait(100);
 
     ?goal_cells(GoalCells);
-    if (.member([ME, X, Y], GoalCells)) {
-        +goal(X, Y);
-    } 
+
     if (.member([A, X, Y], GoalCells) & A \== ME) {
-        discoverGoal(A, X, Y);
+        +known_goal(A, X, Y);
     }
     if (.member([A, X + 1, Y], GoalCells) & A \== ME) {
-        discoverGoal(A, X + 1, Y);
+        +known_goal(A, X + 1, Y);
     }
     if (.member([A, X - 1, Y], GoalCells) & A \== ME) {
-        discoverGoal(A, X - 1, Y);
+        +known_goal(A, X - 1, Y);
     }
     if (.member([A, X, Y + 1], GoalCells) & A \== ME) {
-        discoverGoal(A, X, Y + 1);
+        +known_goal(A, X, Y + 1);
     }
     if (.member([A, X, Y - 1], GoalCells) & A \== ME) {
-        discoverGoal(A, X, Y - 1);
-    }
-    
-    hasGoalBeenDiscovered(ME, Found, GX, GY);
-    if (Found & not goal(GX, GY)) {
-        +goal(GX, GY);
+        +known_goal(A, X, Y - 1);
     }
 
     if (has_available_intersections(X, Y)) {
-        if (goal(GX, GY)) {
+        if (goal(ME, GX, GY)) {
             !decide_intersection_or_straight_goal_oriented(X, Y, GX, GY, Direction);
         } else {
             !decide_intersection_or_straight(X, Y, Direction);
@@ -109,6 +103,23 @@ get_name(ME) :- name(ME).
     } else {
         !proceed_straight(X, Y, Direction);
     }.
+
++!share_goal : get_name(ME) & at(ME, X, Y) <-
+    updatePos(ME, X, Y);
+    .findall([A, GX, GY], known_goal(A, GX, GY), Goals);
+    !share_goals_owner(Goals).
+
++!share_goals_owner([]) <- true.
++!share_goals_owner([[A, GX, GY] | Rest]) <-
+    isNeighborAtMost1(A, IsN);
+    if (IsN) {
+        .send(A, tell, goal_info(A, GX, GY))
+    };
+    !share_goals_owner(Rest).
+
++goal_info(Owner, GX, GY)[source(From)] : get_name(ME) & Owner == ME <-
+    +goal(ME, GX, GY);
+    .print("[share] received goal of ", From, " for ", Owner, " @(", GX, ",", GY, ")").
 
 
 +!decide_intersection_or_straight_goal_oriented(X, Y, GX, GY, Direction) : get_name(ME) <-

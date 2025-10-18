@@ -1,12 +1,10 @@
 mas main {
   agent spawner: probabilistic_vehicle/modules/spawner.asl {
     beliefs: name("spawner")
-    focus: w.trafficEnv, w.light1, w.light2
+    focus: w.trafficEnv
   }
 
   workspace w {
     artifact trafficEnv: traffic.TrafficEnvironment()
-    artifact light1: traffic.TrafficLight(2, 1)
-    artifact light2: traffic.TrafficLight(2, 2)
   }
 }

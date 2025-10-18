@@ -1,7 +1,5 @@
 package traffic;
 
-import java.awt.Component;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +44,7 @@ import core.Utils;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
 import view.MapPanel;
 
 public class TrafficEnvironment extends Artifact implements TurnDiscoveryListener, IntersectionDiscoveryListener {
@@ -65,10 +64,12 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     private Map<String, Position> discoveredGoals;
     private MapPanel mapPanel;
     private Metrics metrics = new Metrics();
+    private Map<String, Position> lastPos = new HashMap<>();
 
     private Timer timer;
-    private int interval = 2000;
+    private int interval = 3000;
     private boolean running = false;
+    private boolean spawnComplete = false;
 
     public void init() {
         initializeData();
@@ -166,6 +167,19 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         ActionHandlerFactory.registerHandler("wait", new DefaultActionHandler());
         ActionHandlerFactory.registerHandler("change_lane", new ChangeLaneActionHandler(changeLanePlanner));
         ActionHandlerFactory.registerHandler("default", new DefaultActionHandler());
+    }
+
+    @OPERATION
+    public void isNeighborAtMost1(String other, OpFeedbackParam<Boolean> yes) {
+        String me = getCurrentOpAgentId().toString();
+        Position p = this.agentPositions.get(me);
+        Position q = this.agentPositions.get(other);
+        boolean res = false;
+        if (p != null && q != null) {
+            int d = Math.abs(q.getX() - p.getX()) + Math.abs(q.getY() - p.getY());
+            res = d <= 5;
+        }
+        yes.set(res);
     }
 
     private void setupEnvironment() {
@@ -302,6 +316,30 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
     }
 
     @OPERATION
+    public void getNeighborsAtMost1(OpFeedbackParam<List<String>> ids) {
+        String me = getCurrentOpAgentId().toString();
+        Position p = this.agentPositions.get(me);
+        List<String> res = new ArrayList<>();
+        if (p != null) {
+            for (Map.Entry<String, Position> e : this.agentPositions.entrySet()) {
+                String other = e.getKey();
+                if (other.equals(me))
+                    continue;
+                Position q = e.getValue();
+                int d = Math.abs(q.getX() - p.getX()) + Math.abs(q.getY() - p.getY());
+                if (d <= 1)
+                    res.add(other);
+            }
+        }
+        ids.set(res);
+    }
+
+    @OPERATION
+    public void updatePos(String me, int x, int y) {
+        lastPos.put(me, new Position(x, y));
+    }
+
+    @OPERATION
     public void pickRandomFreeRoadCell(long seed, OpFeedbackParam<Integer> x, OpFeedbackParam<Integer> y) {
         List<Position> free = collectFreeRoadCells();
         if (free.isEmpty()) {
@@ -405,12 +443,17 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
             System.out.println("[result] " + result.toString());
         }
-        if (goalsPositions.size() <= 3) {
+        if (goalsPositions.size() <= 3 & spawnComplete) {
             metrics.endSimulation();
             metrics.printSummary();
             stopSimulation();
             showMetricsDialog();
         }
+    }
+
+    @OPERATION
+    public void setSpawnComplete() {
+        this.spawnComplete = true;
     }
 
     private void showMetricsDialog() {
@@ -602,6 +645,26 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         this.goalsPositions.put(getCurrentOpAgentId().toString(), goal);
 
         defineObsProperty("goal_cell", getCurrentOpAgentId().toString(), goal.getX(), goal.getY());
+
+        if (this.mapPanel != null) {
+            this.mapPanel.repaint();
+        }
+    }
+
+    @OPERATION
+    public void assignGoalToAgent(OpFeedbackParam<Integer> gx, OpFeedbackParam<Integer> gy) {
+        var freeCells = collectFreeRoadCells();
+        freeCells.removeAll(this.goalsPositions.values());
+        Random rand = new Random(System.nanoTime());
+        Position goal = freeCells.get(rand.nextInt(freeCells.size()));
+
+        String agentId = getCurrentOpAgentId().toString();
+        this.goalsPositions.put(agentId, goal);
+
+        defineObsProperty("goal", agentId, goal.getX(), goal.getY());
+
+        gx.set(goal.getX());
+        gy.set(goal.getY());
 
         if (this.mapPanel != null) {
             this.mapPanel.repaint();
