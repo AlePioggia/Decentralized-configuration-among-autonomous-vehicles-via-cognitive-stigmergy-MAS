@@ -450,11 +450,32 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         }
         System.out.println("total steps: " + metrics.getTotalSteps());
 
-        if ((goalsPositions.size() <= 3 & spawnComplete) | (metrics.getTotalSteps() >= 10000)) {
+        if ((goalsPositions.size() <= 3 & spawnComplete) | (metrics.getNumInterations() >= 250)) {
             metrics.endSimulation();
             metrics.printSummary();
-            stopSimulation();
             showMetricsDialog();
+            writeSummaryToFile();
+            stopSimulation();
+        }
+    }
+
+    private void writeSummaryToFile() {
+        try {
+            String controller = System.getProperty("sim.controller", "no_stigmergy");
+            String outDir = System.getProperty("sim.outdir", "results");
+            String runId = System.getProperty("sim.runId", Long.toString(System.currentTimeMillis()));
+
+            java.nio.file.Path dir = java.nio.file.Paths.get(outDir, controller);
+            java.nio.file.Files.createDirectories(dir);
+
+            java.nio.file.Path out = dir.resolve("summary_" + controller + "_" + runId + ".txt");
+            String summary = (metrics != null && metrics.getSummaryString() != null)
+                    ? metrics.getSummaryString()
+                    : "No summary";
+            java.nio.file.Files.writeString(out, summary);
+            System.out.println("[SUMMARY] written to " + out.toAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("[SUMMARY][ERROR] " + e.getMessage());
         }
     }
 
@@ -620,6 +641,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
         if (this.timer != null) {
             this.timer.cancel();
         }
+        System.exit(0);
     }
 
     @OPERATION
