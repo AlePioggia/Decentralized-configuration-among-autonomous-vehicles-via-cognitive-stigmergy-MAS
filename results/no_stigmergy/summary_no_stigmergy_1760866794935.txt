@@ -1,0 +1,7 @@
+Total steps: 8169
+Goals reached: 26
+Elapsed time: 753043 ms
+Step stddev: 1.7072201237579725
+Time stddev: 0.0
+Step equity ratio: 1.0204081632653061
+Time equity ratio: 1.0

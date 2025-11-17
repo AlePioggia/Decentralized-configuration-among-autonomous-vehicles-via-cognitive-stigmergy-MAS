@@ -152,6 +152,7 @@ public class Metrics {
         sb.append("Time stddev: ").append(getTimeStdDev()).append("\n");
         sb.append("Step equity ratio: ").append(getStepEquityRatio()).append("\n");
         sb.append("Time equity ratio: ").append(getTimeEquityRatio()).append("\n");
+        sb.append("Number of iterations: ").append(getNumInterations()).append("\n");
         return sb.toString();
     }
 
