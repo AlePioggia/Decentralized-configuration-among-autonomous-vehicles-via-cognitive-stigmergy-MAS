@@ -55,7 +55,7 @@ def run_statistics(df, metric):
     group1 = df[df["controller"] == "stigmergy"][metric].dropna()
     group2 = df[df["controller"] == "no_stigmergy"][metric].dropna()
 
-    print(f"\n📊 Analisi metrica: {metric}")
+    print(f"\nAnalisi metrica: {metric}")
     print(f"Stigmergy: media={group1.mean():.2f}, std={group1.std():.2f}, median={group1.median():.2f}")
     print(f"No Stigmergy: media={group2.mean():.2f}, std={group2.std():.2f}, median={group2.median():.2f}")
 
