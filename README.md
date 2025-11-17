@@ -45,7 +45,7 @@ python3 experiments.py
 This test will make 30 runs locally and for each one of them, a file containing its metrics will be saved in the results folder. 
 The experiments script by default considers the no stigmergy version of the controller, in order to modify this, you should:
 
-#### Modify the script in src/agt/probabilistic_vehicle/modules folder, named spawner.asl
+#### 1. Modify the script in src/agt/probabilistic_vehicle/modules folder, named spawner.asl
 
 You can choose between these two versions, in order to test the no stigmergy version or the stigmergy version. You can simply copy and substitute the spawn_loop rule with the version its needed to test.
 
@@ -101,6 +101,54 @@ Version for controller using stigmergy:
         .print("[spawner] done.");
         setSpawnComplete;
     }.
+```
+
+#### 2. Change metrics destination, in directory src/env/traffic, in the TrafficEnvironment class (Cartago)
+
+Controller with stigmergy version:
+```
+    private void writeSummaryToFile() {
+        try {
+            String controller = System.getProperty("sim.controller", "complete_vehicle");
+            String outDir = System.getProperty("sim.outdir", "results");
+            String runId = System.getProperty("sim.runId", Long.toString(System.currentTimeMillis()));
+
+            java.nio.file.Path dir = java.nio.file.Paths.get(outDir, controller);
+            java.nio.file.Files.createDirectories(dir);
+
+            java.nio.file.Path out = dir.resolve("summary_" + controller + "_" + runId + ".txt");
+            String summary = (metrics != null && metrics.getSummaryString() != null)
+                    ? metrics.getSummaryString()
+                    : "No summary";
+            java.nio.file.Files.writeString(out, summary);
+            System.out.println("[SUMMARY] written to " + out.toAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("[SUMMARY][ERROR] " + e.getMessage());
+        }
+    }
+```
+
+Controller with no stigmergy version:
+```
+    private void writeSummaryToFile() {
+        try {
+            String controller = System.getProperty("sim.controller", "no_stigmergy");
+            String outDir = System.getProperty("sim.outdir", "results");
+            String runId = System.getProperty("sim.runId", Long.toString(System.currentTimeMillis()));
+
+            java.nio.file.Path dir = java.nio.file.Paths.get(outDir, controller);
+            java.nio.file.Files.createDirectories(dir);
+
+            java.nio.file.Path out = dir.resolve("summary_" + controller + "_" + runId + ".txt");
+            String summary = (metrics != null && metrics.getSummaryString() != null)
+                    ? metrics.getSummaryString()
+                    : "No summary";
+            java.nio.file.Files.writeString(out, summary);
+            System.out.println("[SUMMARY] written to " + out.toAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("[SUMMARY][ERROR] " + e.getMessage());
+        }
+    }
 ```
 
 ### Statistical tests
