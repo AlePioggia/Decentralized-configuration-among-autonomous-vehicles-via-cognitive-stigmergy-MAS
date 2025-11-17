@@ -16,7 +16,7 @@
         if (X \== -1 & Y \== -1) {
             .concat("vehicle", I, Name);
             Params = [name(Name)];
-            .create_agent(Name, "probabilistic_vehicle/no_stigmergy.asl", Params);
+            .create_agent(Name, "probabilistic_vehicle/complete_vehicle.asl", Params);
             .send(Name, tell, name(Name));
             placeAgent(Name, X, Y, Result);
             .send(Name, tell, env_ready);
