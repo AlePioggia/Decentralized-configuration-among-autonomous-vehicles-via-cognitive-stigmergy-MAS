@@ -461,7 +461,7 @@ public class TrafficEnvironment extends Artifact implements TurnDiscoveryListene
 
     private void writeSummaryToFile() {
         try {
-            String controller = System.getProperty("sim.controller", "no_stigmergy");
+            String controller = System.getProperty("sim.controller", "complete_vehicle");
             String outDir = System.getProperty("sim.outdir", "results");
             String runId = System.getProperty("sim.runId", Long.toString(System.currentTimeMillis()));
 
